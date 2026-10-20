@@ -93,6 +93,18 @@ button { cursor: pointer; }
 
 .header-row [hidden] { display: none; }
 
+.sync-status {
+  min-height: 1.4em;
+  margin: 2px 0 0;
+  color: var(--text-sub);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.sync-status[data-state="synced"] { color: var(--ok); }
+.sync-status[data-state="error"],
+.sync-status[data-state="offline"] { color: var(--soon); }
+
 .app-header h1 {
   margin: 0;
   font-size: 1.375rem;

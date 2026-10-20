@@ -43,6 +43,7 @@ const els = {
   toastMessage: $('toast-message'),
   toastUndo: $('toast-undo'),
   sortWrap: $('sort-wrap'),
+  syncStatus: $('sync-status'),
   viewTabs: document.querySelectorAll('.view-tabs [role="tab"]'),
   listView: $('list-view'),
   calendarView: $('calendar-view'),
@@ -363,6 +364,20 @@ function syncEmojiPicker() {
 function persist() {
   const ok = saveItems(items);
   els.warning.hidden = ok;
+  cloudSchedulePush();
+}
+
+const SYNC_LABEL = {
+  connecting: '☁️ 연결 중…',
+  syncing: '☁️ 저장 중…',
+  synced: '☁️ 클라우드에 저장됨',
+  offline: '📴 오프라인 · 기기에만 저장됨',
+  error: '⚠️ 클라우드 연결 실패 · 기기에만 저장됨',
+};
+
+function renderSyncStatus(state) {
+  els.syncStatus.dataset.state = state;
+  els.syncStatus.textContent = SYNC_LABEL[state] || '';
 }
 
 function findItem(id) {
@@ -614,3 +629,13 @@ els.sort.value = sortMode;
 els.warning.hidden = isStorageAvailable();
 renderEmojiPicker();
 render();
+
+cloudInit({
+  getItems: () => items,
+  setItems: (next) => {
+    items = next;
+    saveItems(items);
+    render();
+  },
+  onStatus: renderSyncStatus,
+});

@@ -8,18 +8,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 실행·배포
 
-- 빌드, 패키지 매니저, 테스트 도구 없음. HTML/CSS/Vanilla JS만 사용합니다(프레임워크·라이브러리 추가 금지).
+- 빌드, 패키지 매니저, 테스트 도구 없음. HTML/CSS/Vanilla JS만 사용합니다. 외부 라이브러리는 CDN으로 불러오는 `@supabase/supabase-js`(UMD, 버전 고정) 하나뿐이며, 그 밖의 프레임워크·라이브러리는 추가하지 않습니다.
 - 반드시 HTTP 서버로 열어서 확인합니다. `file://`로 열면(미리보기 창에서는 `data:` URL로 바뀜) `localStorage`가 막혀 저장 기능을 확인할 수 없습니다.
 - 동작 확인은 브라우저에서 직접 클릭하거나 DOM을 조작하는 방식으로 하고, 휴대폰 화면(375px)에서도 확인합니다.
-- 배포는 GitHub Pages(`main` 브랜치, `/` 루트) → https://tm2000fcffffff.github.io/CheckList/ 입니다. 하위 경로에 배포되므로 리소스 경로는 항상 상대 경로로 씁니다.
+- 배포: `main`에 푸시하면 Vercel(https://checklist-five-pi.vercel.app, 프로젝트 `checklist`)과 GitHub Pages(https://tm2000fcffffff.github.io/CheckList/)에 자동으로 배포됩니다. GitHub Pages는 하위 경로에 배포되므로 리소스 경로는 항상 상대 경로로 씁니다.
 
 ## 구조
 
-- `index.html`에서 일반 `<script>`(모듈 아님)를 `date-utils.js` → `storage.js` → `script.js` 순서로 불러옵니다. 세 파일은 전역 스코프를 공유하므로 이 순서에 의존합니다.
+- `index.html`에서 일반 `<script>`(모듈 아님)를 `date-utils.js` → `storage.js` → supabase-js CDN → `sync.js` → `script.js` 순서로 불러옵니다. 모든 파일이 전역 스코프를 공유하므로 이 순서에 의존합니다.
   - `date-utils.js`: 날짜는 모두 기기 현지 기준 `YYYY-MM-DD` 문자열로 다룹니다. 문자열 비교로 날짜 순서를 비교합니다.
   - `storage.js`: `localStorage` 키는 `when-did-i:items`, `when-did-i:sort`입니다. 불러올 때 `sanitizeItem`으로 형태를 정리하므로, 데이터 필드를 바꾸면 여기도 함께 수정합니다.
+  - `sync.js`: Supabase 동기화를 맡습니다(프로젝트 `checklist`, ref `jyrcxrpbrdvxppbdzgvd`). 익명 로그인 후 `public.items` 테이블을 사용합니다. 기본 키는 `(user_id, id)`이고, RLS로 자기 행만 접근할 수 있으며, `anon` 역할은 권한이 없습니다. 화면은 항상 localStorage 기준으로 그리고, `persist()`가 `cloudSchedulePush()`를 불러 마지막 동기화 상태(`when-did-i:synced`)와 비교한 차이만 upsert/delete합니다. 시작할 때는 `mergeItems()`로 3-way 병합합니다. 서버에 연결할 수 없어도 앱은 기기 저장만으로 동작해야 합니다.
   - `script.js`: 상태(`items`)를 바꾼 뒤 `persist()` → `render()` 순서로 호출합니다. `render()`는 목록 보기와(달력 보기 중이면) 달력까지 다시 그립니다.
-- 항목 데이터: `{ id, name, icon, cycleDays|null, history: string[], createdAt }`. `history`는 최신 날짜가 앞에 오고, `history[0]`이 마지막으로 한 날입니다. 날짜를 추가하거나 바꿀 때는 항상 `normalizeHistory()`로 중복을 없애고 정렬합니다.
+- 항목 데이터: `{ id, name, icon, cycleDays|null, history: string[], createdAt }`. DB 컬럼은 snake_case(`cycle_days`, `created_at`)이고 `history`는 `date[]`이며, 변환은 `toRow`/`fromRow`가 합니다. 필드를 바꾸면 마이그레이션, `sanitizeItem`, `toRow`/`fromRow`, `itemKey`를 함께 수정합니다. `history`는 최신 날짜가 앞에 오고, `history[0]`이 마지막으로 한 날입니다. 날짜를 추가하거나 바꿀 때는 항상 `normalizeHistory()`로 중복을 없애고 정렬합니다.
 - 상태 단계: `경과일 ÷ cycleDays`가 0.7 미만이면 ok, 0.7 이상 1 미만이면 soon, 1 이상이면 over, 주기가 없으면 none. 카드에 `level-*` 클래스로 표시합니다.
 - 화면 요소는 `textContent`와 `<template>`으로 만듭니다. 사용자가 입력한 내용을 `innerHTML`에 넣지 않습니다.
 
