@@ -390,6 +390,51 @@ button { cursor: pointer; }
 
 .suggestions button:hover { border-color: var(--primary); }
 
+/* ===== 소개·자주 묻는 질문 ===== */
+.about {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-sub);
+  font-size: 0.9375rem;
+}
+
+.about-title {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 1.0625rem;
+}
+
+.about-desc { margin: 0 0 16px; }
+.about-desc strong { color: var(--text); }
+
+.about-sub {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.faq {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.faq summary {
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.faq details p { margin: 0; padding: 0 14px 12px; }
+
 /* ===== 추가 버튼 ===== */
 .fab {
   position: fixed;

@@ -4,8 +4,108 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#4f6bed">
-  <meta name="description" content="마지막으로 한 날부터 며칠 지났는지 알려 주는 기록장">
-  <title>그거 언제 했더라?</title>
+  <title>그거 언제 했더라? - 마지막으로 한 날 기록장 · 집안일 주기 알림</title>
+  <meta name="description" content="이불 빨래, 칫솔 교체, 머리 자르기처럼 가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 알려 주는 무료 기록장. 주기를 정하면 할 때가 된 일을 색으로 알려 주고, 달력과 가족·룸메이트용 집안일 룰렛도 있어요.">
+  <meta name="keywords" content="마지막으로 한 날, 경과일 기록, 집안일 주기, 집안일 체크리스트, 칫솔 교체 주기, 이불 빨래 주기, 정수기 필터 교체, 집안일 룰렛, 집안일 분담, 생활 습관 기록">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://checklist-five-pi.vercel.app/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+  <!-- 공유 미리보기 (Open Graph / X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="그거 언제 했더라?">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:url" content="https://checklist-five-pi.vercel.app/">
+  <meta property="og:title" content="그거 언제 했더라? - 마지막으로 한 날 기록장">
+  <meta property="og:description" content="가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 한눈에. 주기 알림, 달력, 집안일 룰렛까지.">
+  <meta property="og:image" content="https://checklist-five-pi.vercel.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="그거 언제 했더라? - 가끔 하는 일의 경과일을 보여 주는 기록장">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="그거 언제 했더라? - 마지막으로 한 날 기록장">
+  <meta name="twitter:description" content="가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 한눈에. 주기 알림, 달력, 집안일 룰렛까지.">
+  <meta name="twitter:image" content="https://checklist-five-pi.vercel.app/og-image.png">
+
+  <!-- 구조화 데이터 (검색·AI 답변 엔진용). FAQ는 본문 소개 섹션 문구와 같게 유지합니다. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://checklist-five-pi.vercel.app/#website",
+        "url": "https://checklist-five-pi.vercel.app/",
+        "name": "그거 언제 했더라?",
+        "inLanguage": "ko-KR"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://checklist-five-pi.vercel.app/#app",
+        "name": "그거 언제 했더라?",
+        "url": "https://checklist-five-pi.vercel.app/",
+        "description": "가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 보여 주는 모바일 중심 기록장입니다. 권장 주기를 정하면 여유·곧 할 때·지남 상태를 색으로 보여 주고, 달력 보기와 가족·룸메이트가 함께 쓰는 집안일 룰렛을 제공합니다.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": "ko-KR",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+        "featureList": [
+          "버튼 한 번으로 오늘 한 일 기록, 5초 안에 되돌리기",
+          "마지막으로 한 날부터 지난 일수 표시",
+          "권장 주기 대비 여유·곧 할 때·지남 상태 색상 표시",
+          "급한 순·오래된 순·이름순 정렬",
+          "월별 달력에서 지난 기록과 다음 예정일 확인",
+          "Google 로그인으로 여러 기기 동기화",
+          "그룹을 만들어 집안일 룰렛으로 담당자 뽑기"
+        ],
+        "isPartOf": { "@id": "https://checklist-five-pi.vercel.app/#website" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://checklist-five-pi.vercel.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "'그거 언제 했더라?'는 어떤 서비스인가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "이불 빨래, 칫솔 교체, 머리 자르기처럼 가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 보여 주는 무료 웹 기록장입니다. 설치 없이 휴대폰 브라우저에서 바로 쓸 수 있습니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "어떻게 기록하나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "항목을 추가한 뒤 그 일을 할 때마다 '했어요' 버튼을 한 번 누르면 오늘 날짜로 기록됩니다. 잘못 눌렀다면 5초 안에 취소할 수 있고, 지난 날짜는 달력에서 추가할 수 있습니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "할 때가 된 일은 어떻게 알 수 있나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "항목에 권장 주기(예: 14일마다)를 정하면, 지난 일수가 주기의 70% 미만이면 초록(여유), 70% 이상이면 노랑(곧 할 때), 주기를 넘기면 빨강(지남)으로 표시됩니다. 기본 정렬인 급한 순으로 보면 할 때가 된 일이 맨 위에 옵니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "칫솔이나 이불은 얼마나 자주 바꾸거나 빨아야 하나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "일반적으로 칫솔은 약 3개월(90일)마다 교체하고, 이불은 1~2주(7~14일)마다 빨래하기를 권합니다. 이런 권장 주기를 항목에 입력해 두면 다음에 할 날을 놓치지 않습니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "기록은 어디에 저장되나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "로그인하지 않으면 지금 쓰는 기기의 브라우저에만 저장됩니다. Google로 로그인하면 기록이 클라우드에 동기화되어 휴대폰과 PC 등 여러 기기에서 같은 기록을 볼 수 있습니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "가족이나 룸메이트와 집안일을 나눌 수 있나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "네. 그룹을 만들고 초대 코드나 링크로 함께 쓸 사람을 부른 뒤, 그룹 집안일을 추가하고 룰렛을 돌리면 서버가 무작위로 담당자를 뽑습니다. 결과는 그룹원 모두에게 실시간으로 보입니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "사용료가 있나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "무료입니다. 앱 설치나 회원 가입 없이 바로 쓸 수 있고, 동기화와 그룹 기능을 쓸 때만 Google 로그인이 필요합니다." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -58,6 +158,47 @@
         <p class="empty-title">아직 항목이 없어요</p>
         <p class="empty-desc">자주 잊는 일을 골라 바로 추가해 보세요.</p>
         <ul id="suggestion-list" class="suggestions"></ul>
+      </section>
+
+      <!-- 서비스 소개·자주 묻는 질문 (검색·AI 답변 엔진용). <head>의 FAQPage 구조화 데이터와 문구를 같게 유지합니다. -->
+      <section class="about" aria-labelledby="about-title">
+        <h2 id="about-title" class="about-title">그거 언제 했더라? 소개</h2>
+        <p class="about-desc">
+          <strong>그거 언제 했더라?</strong>는 이불 빨래, 칫솔 교체, 머리 자르기처럼 가끔 하는 일을
+          <strong>마지막으로 한 날부터 며칠 지났는지</strong> 보여 주는 무료 웹 기록장입니다.
+          권장 주기를 정하면 할 때가 된 일을 색으로 알려 주고, 달력과 집안일 룰렛도 쓸 수 있어요.
+        </p>
+        <h3 class="about-sub">자주 묻는 질문</h3>
+        <div class="faq">
+          <details>
+            <summary>'그거 언제 했더라?'는 어떤 서비스인가요?</summary>
+            <p>이불 빨래, 칫솔 교체, 머리 자르기처럼 가끔 하는 일을 마지막으로 한 날부터 며칠 지났는지 보여 주는 무료 웹 기록장입니다. 설치 없이 휴대폰 브라우저에서 바로 쓸 수 있습니다.</p>
+          </details>
+          <details>
+            <summary>어떻게 기록하나요?</summary>
+            <p>항목을 추가한 뒤 그 일을 할 때마다 '했어요' 버튼을 한 번 누르면 오늘 날짜로 기록됩니다. 잘못 눌렀다면 5초 안에 취소할 수 있고, 지난 날짜는 달력에서 추가할 수 있습니다.</p>
+          </details>
+          <details>
+            <summary>할 때가 된 일은 어떻게 알 수 있나요?</summary>
+            <p>항목에 권장 주기(예: 14일마다)를 정하면, 지난 일수가 주기의 70% 미만이면 초록(여유), 70% 이상이면 노랑(곧 할 때), 주기를 넘기면 빨강(지남)으로 표시됩니다. 기본 정렬인 급한 순으로 보면 할 때가 된 일이 맨 위에 옵니다.</p>
+          </details>
+          <details>
+            <summary>칫솔이나 이불은 얼마나 자주 바꾸거나 빨아야 하나요?</summary>
+            <p>일반적으로 칫솔은 약 3개월(90일)마다 교체하고, 이불은 1~2주(7~14일)마다 빨래하기를 권합니다. 이런 권장 주기를 항목에 입력해 두면 다음에 할 날을 놓치지 않습니다.</p>
+          </details>
+          <details>
+            <summary>기록은 어디에 저장되나요?</summary>
+            <p>로그인하지 않으면 지금 쓰는 기기의 브라우저에만 저장됩니다. Google로 로그인하면 기록이 클라우드에 동기화되어 휴대폰과 PC 등 여러 기기에서 같은 기록을 볼 수 있습니다.</p>
+          </details>
+          <details>
+            <summary>가족이나 룸메이트와 집안일을 나눌 수 있나요?</summary>
+            <p>네. 그룹을 만들고 초대 코드나 링크로 함께 쓸 사람을 부른 뒤, 그룹 집안일을 추가하고 룰렛을 돌리면 서버가 무작위로 담당자를 뽑습니다. 결과는 그룹원 모두에게 실시간으로 보입니다.</p>
+          </details>
+          <details>
+            <summary>사용료가 있나요?</summary>
+            <p>무료입니다. 앱 설치나 회원 가입 없이 바로 쓸 수 있고, 동기화와 그룹 기능을 쓸 때만 Google 로그인이 필요합니다.</p>
+          </details>
+        </div>
       </section>
     </section>
 
