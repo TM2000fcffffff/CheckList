@@ -450,6 +450,7 @@ const SYNC_LABEL = {
 function renderSyncStatus(state) {
   els.syncStatus.dataset.state = state;
   els.syncStatus.textContent = SYNC_LABEL[state] || '';
+  els.syncStatus.title = SYNC_LABEL[state] || ''; // 모바일에서는 아이콘만 보이므로 길게 누르면 설명이 보이게
 }
 
 /* ===== 계정 ===== */
@@ -462,6 +463,7 @@ function renderUser(user) {
 
   const meta = user.user_metadata || {};
   els.userName.textContent = meta.full_name || meta.name || user.email || 'Google 계정';
+  els.userInfo.title = els.userName.textContent; // 모바일에서는 이름을 숨기고 사진만 보여 줌
   els.userAvatar.hidden = !meta.avatar_url;
   if (meta.avatar_url) els.userAvatar.src = meta.avatar_url;
 }
