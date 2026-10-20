@@ -84,11 +84,18 @@
           <span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span>
         </div>
         <div id="cal-grid" class="cal-grid"></div>
+
+        <div class="cal-legend" aria-hidden="true">
+          <span><span class="cal-mark done">✓</span> 한 날</span>
+          <span><span class="cal-mark due">　</span> 다음 예정</span>
+          <span><span class="cal-mark overdue">　</span> 예정 지남</span>
+        </div>
       </div>
 
       <div class="cal-detail">
         <h3 id="cal-detail-title"></h3>
         <p id="cal-detail-desc" class="cal-detail-desc"></p>
+        <ul id="cal-due-list" class="cal-due-list" hidden></ul>
         <ul id="cal-detail-list" class="cal-chips"></ul>
       </div>
     </section>

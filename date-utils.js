@@ -23,6 +23,12 @@ function isDateStr(value) {
   return typeof value === 'string' && DATE_PATTERN.test(value) && !Number.isNaN(parseDate(value).getTime());
 }
 
+function addDays(str, days) {
+  const date = parseDate(str);
+  date.setDate(date.getDate() + days);
+  return formatDate(date);
+}
+
 // from → to 까지 지난 일수 (서머타임 오차는 반올림으로 흡수)
 function daysBetween(from, to) {
   return Math.round((parseDate(to) - parseDate(from)) / DAY_MS);

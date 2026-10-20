@@ -62,6 +62,7 @@ const els = {
   calDetailTitle: $('cal-detail-title'),
   calDetailDesc: $('cal-detail-desc'),
   calDetailList: $('cal-detail-list'),
+  calDueList: $('cal-due-list'),
 };
 
 const CAL_MAX_ICONS = 3;
@@ -186,6 +187,32 @@ function buildRecordMap() {
   return map;
 }
 
+// 다음 예정일 = 마지막으로 한 날 + 주기 (주기나 기록이 없으면 계산하지 않음)
+function getNextDue(item) {
+  if (!item.cycleDays || !item.history[0]) return null;
+  return addDays(item.history[0], item.cycleDays);
+}
+
+// 날짜 → 그날이 다음 예정일인 항목 목록
+function buildDueMap() {
+  const map = new Map();
+  for (const item of items) {
+    if (calFilter !== 'all' && item.id !== calFilter) continue;
+    const due = getNextDue(item);
+    if (!due) continue;
+    if (!map.has(due)) map.set(due, []);
+    map.get(due).push(item);
+  }
+  return map;
+}
+
+function describeDue(due, today) {
+  const diff = daysBetween(today, due);
+  if (diff > 0) return `${diff}일 남음`;
+  if (diff === 0) return '오늘 할 차례';
+  return `${-diff}일 지남`;
+}
+
 function renderCalFilter() {
   if (calFilter !== 'all' && !findItem(calFilter)) calFilter = 'all';
 
@@ -200,16 +227,23 @@ function renderCalFilter() {
 function renderCalendar() {
   const today = todayStr();
   const records = buildRecordMap();
+  const dues = buildDueMap();
   const monthPrefix = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-`;
 
   renderCalFilter();
   els.calTitle.textContent = `${calYear}년 ${calMonth + 1}월`;
 
-  let monthCount = 0;
-  for (const [date, list] of records) {
-    if (date.startsWith(monthPrefix)) monthCount += list.length;
-  }
-  els.calSummary.textContent = monthCount ? `이번 달 기록 ${monthCount}회` : '이번 달 기록 없음';
+  const countInMonth = (map) => {
+    let count = 0;
+    for (const [date, list] of map) {
+      if (date.startsWith(monthPrefix)) count += list.length;
+    }
+    return count;
+  };
+  const monthCount = countInMonth(records);
+  const dueCount = countInMonth(dues);
+  els.calSummary.textContent =
+    (monthCount ? `이번 달 기록 ${monthCount}회` : '이번 달 기록 없음') + (dueCount ? ` · 예정 ${dueCount}개` : '');
 
   const firstWeekday = new Date(calYear, calMonth, 1).getDay();
   const lastDay = new Date(calYear, calMonth + 1, 0).getDate();
@@ -224,6 +258,8 @@ function renderCalendar() {
   for (let day = 1; day <= lastDay; day++) {
     const date = formatDate(new Date(calYear, calMonth, day));
     const dayRecords = records.get(date) || [];
+    const dayDues = dues.get(date) || [];
+    const overdue = dayDues.length > 0 && date < today;
     const weekday = (firstWeekday + day - 1) % 7;
 
     const cell = document.createElement('button');
@@ -234,6 +270,7 @@ function renderCalendar() {
     if (date === calSelected) cell.classList.add('is-selected');
     if (date > today) cell.classList.add('is-future');
     if (dayRecords.length) cell.classList.add('has-record');
+    if (dayDues.length) cell.classList.add(overdue ? 'has-overdue' : 'has-due');
 
     const num = document.createElement('span');
     num.className = 'cal-num';
@@ -241,22 +278,35 @@ function renderCalendar() {
     if (weekday === 6) num.classList.add('sat');
     num.textContent = day;
 
+    // 한 날은 아이콘 그대로, 예정일은 점선 테두리, 지난 예정은 빨간 테두리로 표시
+    const dueKind = overdue ? 'overdue' : 'due';
+    const marks = [
+      ...dayRecords.map((item) => ({ item, kind: 'done' })),
+      ...dayDues.map((item) => ({ item, kind: dueKind })),
+    ];
     const icons = document.createElement('span');
     icons.className = 'cal-icons';
-    const overflow = dayRecords.length > CAL_MAX_ICONS;
-    const shown = overflow ? dayRecords.slice(0, CAL_MAX_ICONS - 1) : dayRecords;
-    icons.textContent = shown.map((item) => item.icon).join('');
+    const overflow = marks.length > CAL_MAX_ICONS;
+    const shown = overflow ? marks.slice(0, CAL_MAX_ICONS - 1) : marks;
+    for (const mark of shown) {
+      const span = document.createElement('span');
+      span.className = `cal-mark ${mark.kind}`;
+      span.textContent = mark.item.icon;
+      icons.append(span);
+    }
     if (overflow) {
       const more = document.createElement('span');
       more.className = 'cal-more';
-      more.textContent = `+${dayRecords.length - shown.length}`;
+      more.textContent = `+${marks.length - shown.length}`;
       icons.append(more);
     }
 
-    const label = dayRecords.length
-      ? `${formatKoreanDate(date)}, ${dayRecords.map((item) => item.name).join(', ')}`
-      : formatKoreanDate(date);
-    cell.setAttribute('aria-label', label);
+    const labelParts = [formatKoreanDate(date)];
+    if (dayRecords.length) labelParts.push(`한 일: ${dayRecords.map((item) => item.name).join(', ')}`);
+    if (dayDues.length) {
+      labelParts.push(`${overdue ? '지난 예정' : '예정'}: ${dayDues.map((item) => item.name).join(', ')}`);
+    }
+    cell.setAttribute('aria-label', labelParts.join(', '));
     cell.setAttribute('aria-pressed', String(date === calSelected));
 
     cell.append(num, icons);
@@ -283,6 +333,21 @@ function renderCalDetail(today) {
       ? `${done.length}개 기록 · 항목을 눌러 기록을 추가하거나 지울 수 있어요.`
       : '기록 없음 · 이날 한 일을 눌러 기록하세요.';
   }
+
+  // 이날이 다음 예정일인 항목
+  const dueItems = items
+    .filter((item) => (calFilter === 'all' || item.id === calFilter) && getNextDue(item) === calSelected)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const overdue = calSelected < today;
+  els.calDueList.hidden = !dueItems.length;
+  els.calDueList.replaceChildren(
+    ...dueItems.map((item) => {
+      const li = document.createElement('li');
+      li.className = overdue ? 'overdue' : 'due';
+      li.textContent = `${overdue ? '⚠️ 예정 지남' : '📅 예정'} · ${item.icon} ${item.name} · ${describeDue(calSelected, today)}`;
+      return li;
+    })
+  );
 
   const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   els.calDetailList.replaceChildren(

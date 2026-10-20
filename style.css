@@ -636,7 +636,9 @@ button { cursor: pointer; }
 .cal-day:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
 
 .cal-day.is-empty { visibility: hidden; }
-.cal-day.is-future { opacity: 0.4; }
+/* 미래 날짜는 숫자만 흐리게 (예정 표시는 또렷하게 보이도록) */
+.cal-day.is-future .cal-num { opacity: 0.45; }
+.cal-day.has-overdue { background: color-mix(in srgb, var(--over) 10%, transparent); }
 .cal-day.has-record { background: color-mix(in srgb, var(--primary) 10%, transparent); }
 
 .cal-day.is-today .cal-num {
@@ -662,6 +664,80 @@ button { cursor: pointer; }
   align-items: center;
   font-size: 0.8125rem;
   line-height: 1.2;
+}
+
+.cal-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+/* 다음 예정: 점선 테두리 + 흐린 아이콘 */
+.cal-mark.due {
+  border: 1.5px dashed var(--primary);
+  opacity: 0.8;
+}
+
+/* 예정 지남: 빨간 테두리 + 빨간 배경 */
+.cal-mark.overdue {
+  border: 1.5px solid var(--over);
+  background: color-mix(in srgb, var(--over) 18%, transparent);
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin-top: 10px;
+  color: var(--text-sub);
+  font-size: 0.8125rem;
+}
+
+.cal-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cal-legend .cal-mark {
+  font-size: 0.75rem;
+}
+
+.cal-legend .cal-mark.done {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.cal-due-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-due-list li {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.cal-due-list li.due {
+  border: 1.5px dashed var(--primary);
+  color: var(--text);
+}
+
+.cal-due-list li.overdue {
+  border: 1.5px solid var(--over);
+  background: color-mix(in srgb, var(--over) 12%, transparent);
+  color: var(--over);
 }
 
 .cal-more {

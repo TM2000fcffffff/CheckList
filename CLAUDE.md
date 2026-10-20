@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Google OAuth 클라이언트는 Google Cloud 프로젝트 `checklist-512206`에 있습니다(리디렉션 URI는 `https://jyrcxrpbrdvxppbdzgvd.supabase.co/auth/v1/callback`). 새 배포 주소를 추가하면 Supabase Auth의 Redirect URLs에도 `주소/**`를 등록합니다.
   - `script.js`: 상태(`items`)를 바꾼 뒤 `persist()` → `render()` 순서로 호출합니다. `render()`는 목록 보기와(달력 보기 중이면) 달력까지 다시 그립니다.
 - 항목 데이터: `{ id, name, icon, cycleDays|null, history: string[], createdAt }`. DB 컬럼은 snake_case(`cycle_days`, `created_at`)이고 `history`는 `date[]`이며, 변환은 `toRow`/`fromRow`가 합니다. 필드를 바꾸면 마이그레이션, `sanitizeItem`, `toRow`/`fromRow`, `itemKey`를 함께 수정합니다. `history`는 최신 날짜가 앞에 오고, `history[0]`이 마지막으로 한 날입니다. 날짜를 추가하거나 바꿀 때는 항상 `normalizeHistory()`로 중복을 없애고 정렬합니다.
+- 다음 예정일은 `getNextDue(item)` = `history[0] + cycleDays`로 계산합니다(저장하지 않음). 달력은 다음 예정일만 표시하고, 오늘보다 이전이면 그 날짜에 지난 예정(빨간색)으로 표시합니다.
 - 상태 단계: `경과일 ÷ cycleDays`가 0.7 미만이면 ok, 0.7 이상 1 미만이면 soon, 1 이상이면 over, 주기가 없으면 none. 카드에 `level-*` 클래스로 표시합니다.
 - 화면 요소는 `textContent`와 `<template>`으로 만듭니다. 사용자가 입력한 내용을 `innerHTML`에 넣지 않습니다.
 
