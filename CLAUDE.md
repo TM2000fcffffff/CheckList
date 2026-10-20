@@ -12,6 +12,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 반드시 HTTP 서버로 열어서 확인합니다. `file://`로 열면(미리보기 창에서는 `data:` URL로 바뀜) `localStorage`가 막혀 저장 기능을 확인할 수 없습니다.
 - 동작 확인은 브라우저에서 직접 클릭하거나 DOM을 조작하는 방식으로 하고, 휴대폰 화면(375px)에서도 확인합니다.
 - 배포: `main`에 푸시하면 Vercel(https://checklist-five-pi.vercel.app, 프로젝트 `checklist`)과 GitHub Pages(https://tm2000fcffffff.github.io/CheckList/)에 자동으로 배포됩니다. GitHub Pages는 하위 경로에 배포되므로 리소스 경로는 항상 상대 경로로 씁니다.
+- 로컬과 배포 사이트는 같은 Supabase를 씁니다. 로그인 상태에서 테스트하면 사용자의 실제 기록이 바뀌므로, 테스트용 항목·그룹을 새로 만들어 확인하고 끝나면 지웁니다(기존 항목은 건드리지 않음).
+- 배포 확인: 푸시하고 10~20초 뒤 배포 사이트에서 새로 추가한 전역 함수가 있는지(`typeof 함수명`) 보고 새 버전이 반영됐는지 판단합니다.
+
+## 테스트 방법
+
+- 파일 업로드는 `DataTransfer`로 `input.files`를 채운 뒤 `change` 이벤트를 보내 확인합니다.
+- 다른 그룹원의 동작(가입·룰렛)은 `execute_sql`로 다른 사용자를 흉내 내 커밋하면 Realtime 반영까지 확인할 수 있습니다. 끝나면 테스트 그룹을 삭제합니다.
+- 같은 주소에 `#`만 붙여 이동하면 새로고침되지 않아 새 코드가 적용되지 않습니다. `location.reload()`를 씁니다.
 
 ## 구조
 
@@ -35,6 +43,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Emoji 13 이상(🪥, 🪴 등)은 Windows 10에서 네모(□)로 깨집니다. 아이콘을 추가할 때 주의하고, 바꾼 아이콘은 `storage.js`의 `ICON_FALLBACK`에 등록합니다.
 - 색상은 `style.css` `:root`의 CSS 변수로만 지정하고, `prefers-color-scheme: dark`에서도 같은 변수를 다시 정의합니다.
 - 버튼에는 `white-space: nowrap`을 적용하고, 터치 영역은 최소 44px로 유지합니다.
+- 모바일 기준은 `max-width: 480px`입니다. 모바일 상단은 grid + `display: contents`로 두 줄(제목·동기화·계정 / 탭·정렬)로 배치하므로, 헤더에 요소를 추가하면 `grid-template-areas`도 고칩니다.
+- Google 로그인 앱은 테스트 모드라서 Google Cloud에 등록한 테스트 사용자만 로그인할 수 있습니다.
 - `<dialog>`는 열려 있을 때 `showModal()`을 다시 부르면 오류가 납니다. 배경을 눌러 닫을 때는 좌표로 판단합니다(`event.target`만 보면 안쪽 여백을 눌러도 닫힘).
 - 코드 주석과 커밋 메시지는 한국어로 씁니다.
 - Windows PowerShell 5.1에서 `git commit -m`에 큰따옴표가 들어가면 인자가 깨집니다. 메시지를 파일로 저장해 `git commit -F <파일>`로 커밋하거나 Bash를 사용합니다.
