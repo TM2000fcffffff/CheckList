@@ -26,7 +26,7 @@ function sanitizeItem(raw) {
   return {
     id: String(raw.id || createId()),
     name: raw.name.trim(),
-    icon: typeof raw.icon === 'string' && raw.icon ? ICON_FALLBACK[raw.icon] || raw.icon : '📌',
+    icon: isValidIcon(raw.icon) ? ICON_FALLBACK[raw.icon] || raw.icon : DEFAULT_ICON,
     cycleDays: Number.isFinite(cycle) && cycle > 0 ? Math.round(cycle) : null,
     history: normalizeHistory(history),
     createdAt: isDateStr(raw.createdAt) ? raw.createdAt : todayStr(),

@@ -32,7 +32,9 @@ const els = {
   dialog: $('item-dialog'),
   dialogTitle: $('dialog-title'),
   form: $('item-form'),
-  icon: $('field-icon'),
+  iconPreview: $('field-icon-preview'),
+  iconUpload: $('field-icon-upload'),
+  iconFile: $('field-icon-file'),
   emojiPicker: $('emoji-picker'),
   name: $('field-name'),
   cycle: $('field-cycle'),
@@ -223,7 +225,7 @@ function renderCalFilter() {
 
   const options = [new Option('전체 항목', 'all')];
   const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  for (const item of sorted) options.push(new Option(`${item.icon} ${item.name}`, item.id));
+  for (const item of sorted) options.push(new Option(`${iconLabel(item.icon)} ${item.name}`, item.id));
 
   els.calFilter.replaceChildren(...options);
   els.calFilter.value = calFilter;
@@ -296,7 +298,7 @@ function renderCalendar() {
     for (const mark of shown) {
       const span = document.createElement('span');
       span.className = `cal-mark ${mark.kind}`;
-      span.textContent = mark.item.icon;
+      renderIcon(span, mark.item.icon);
       icons.append(span);
     }
     if (overflow) {
@@ -349,7 +351,11 @@ function renderCalDetail(today) {
     ...dueItems.map((item) => {
       const li = document.createElement('li');
       li.className = overdue ? 'overdue' : 'due';
-      li.textContent = `${overdue ? '⚠️ 예정 지남' : '📅 예정'} · ${item.icon} ${item.name} · ${describeDue(calSelected, today)}`;
+      li.append(
+        `${overdue ? '⚠️ 예정 지남' : '📅 예정'} · `,
+        iconWithText(item.icon, item.name),
+        ` · ${describeDue(calSelected, today)}`
+      );
       return li;
     })
   );
@@ -360,7 +366,7 @@ function renderCalDetail(today) {
       const li = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = `${item.icon} ${item.name}`;
+      button.append(iconWithText(item.icon, item.name));
       button.setAttribute('aria-pressed', String(item.history.includes(calSelected)));
       button.disabled = isFuture;
       button.addEventListener('click', () => toggleRecord(item.id, calSelected));
@@ -389,7 +395,7 @@ function createCard({ item, status }, highlight) {
   node.classList.add(`level-${status.level}`);
   if (highlight) node.classList.add('just-done');
 
-  node.querySelector('.item-icon').textContent = item.icon;
+  renderIcon(node.querySelector('.item-icon'), item.icon);
   node.querySelector('.item-name').textContent = item.name;
   node.querySelector('.item-meta').textContent = describe(item, status);
   node.querySelector('.item-badge').textContent = LEVEL_LABEL[status.level];
@@ -419,18 +425,35 @@ function renderEmojiPicker() {
       button.type = 'button';
       button.textContent = emoji;
       button.setAttribute('aria-label', `아이콘 ${emoji}`);
-      button.addEventListener('click', () => {
-        els.icon.value = emoji;
-        syncEmojiPicker();
-      });
+      button.addEventListener('click', () => setDialogIcon(emoji));
       return button;
     })
   );
 }
 
+// 항목 창에서 고른 아이콘 (이모지 또는 이미지 data URL). 글자로 직접 입력할 수는 없습니다.
+let dialogIcon = DEFAULT_ICON;
+
+function setDialogIcon(icon) {
+  dialogIcon = isValidIcon(icon) ? icon : DEFAULT_ICON;
+  renderIcon(els.iconPreview, dialogIcon);
+  syncEmojiPicker();
+}
+
 function syncEmojiPicker() {
   for (const button of els.emojiPicker.children) {
-    button.setAttribute('aria-pressed', String(button.textContent === els.icon.value));
+    button.setAttribute('aria-pressed', String(button.textContent === dialogIcon));
+  }
+}
+
+async function handleIconFile(input, onDone) {
+  const file = input.files[0];
+  input.value = ''; // 같은 파일을 다시 골라도 동작하도록
+  if (!file) return;
+  try {
+    onDone(await makeIconImage(file));
+  } catch (error) {
+    showToast(error.message || '이미지를 올리지 못했어요');
   }
 }
 
@@ -576,7 +599,7 @@ function openDialog(id = null) {
   editingId = item ? item.id : null;
 
   els.dialogTitle.textContent = item ? '항목 수정' : '항목 추가';
-  els.icon.value = item ? item.icon : '📌';
+  setDialogIcon(item ? item.icon : DEFAULT_ICON);
   els.name.value = item ? item.name : '';
   els.cycle.value = item && item.cycleDays ? item.cycleDays : '';
   els.last.value = item && item.history[0] ? item.history[0] : '';
@@ -599,7 +622,7 @@ function handleSubmit(event) {
   event.preventDefault();
 
   const name = els.name.value.trim();
-  const icon = els.icon.value.trim() || '📌';
+  const icon = dialogIcon;
   const cycleRaw = els.cycle.value.trim();
   const last = els.last.value;
   const today = todayStr();
@@ -691,7 +714,8 @@ els.addButton.addEventListener('click', () => openDialog());
 els.form.addEventListener('submit', handleSubmit);
 els.cancelButton.addEventListener('click', () => els.dialog.close());
 els.deleteButton.addEventListener('click', handleDeleteClick);
-els.icon.addEventListener('input', syncEmojiPicker);
+els.iconUpload.addEventListener('click', () => els.iconFile.click());
+els.iconFile.addEventListener('change', () => handleIconFile(els.iconFile, setDialogIcon));
 
 // 바깥(배경)을 누르면 닫기
 // target만 보면 다이얼로그 안쪽 여백을 눌러도 닫히므로 좌표로 판단합니다.

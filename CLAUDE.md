@@ -15,7 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 구조
 
-- `index.html`에서 일반 `<script>`(모듈 아님)를 `date-utils.js` → `storage.js` → supabase-js CDN → `sync.js` → `script.js` → `group.js` 순서로 불러옵니다. 모든 파일이 전역 스코프를 공유하므로 이 순서에 의존합니다. `group.js`는 `script.js`의 `showToast`, `setView`, `getStatus`, `describe`, `LEVEL_LABEL`을 사용합니다.
+- 아이콘(`icon.js`)은 이모지(16자 이하) 또는 사용자가 올린 이미지입니다. 이미지는 기기에서 정사각형으로 잘라 96px webp/jpeg **data URL**로 줄여 `icon` 문자열에 그대로 저장합니다(Storage 미사용, 최대 60000자). DB 제약은 `^data:image/(png|jpeg|webp);base64,` 형식만 허용합니다. 아이콘은 항상 `renderIcon()`/`iconWithText()`로 그리고, `<option>`처럼 글자만 쓸 수 있는 곳에서는 `iconLabel()`(이미지는 🖼️)을 씁니다. 아이콘을 글자로 직접 입력하는 칸은 두지 않습니다.
+- `index.html`에서 일반 `<script>`(모듈 아님)를 `date-utils.js` → `icon.js` → `storage.js` → supabase-js CDN → `sync.js` → `script.js` → `group.js` 순서로 불러옵니다. 모든 파일이 전역 스코프를 공유하므로 이 순서에 의존합니다. `group.js`는 `script.js`의 `showToast`, `setView`, `getStatus`, `describe`, `LEVEL_LABEL`을 사용합니다.
   - `date-utils.js`: 날짜는 모두 기기 현지 기준 `YYYY-MM-DD` 문자열로 다룹니다. 문자열 비교로 날짜 순서를 비교합니다.
   - `storage.js`: `localStorage` 키는 `when-did-i:items`, `when-did-i:sort`입니다. 불러올 때 `sanitizeItem`으로 형태를 정리하므로, 데이터 필드를 바꾸면 여기도 함께 수정합니다.
   - `sync.js`: Supabase 동기화를 맡습니다(프로젝트 `checklist`, ref `jyrcxrpbrdvxppbdzgvd`). Google 로그인(OAuth)으로만 동기화하고, 로그인하지 않으면 기기에만 저장합니다. 익명 로그인은 꺼져 있으며, 예전 익명 세션은 `handleSession`이 로그아웃시킵니다. 로그인 상태는 `onAuthStateChange` 하나로 처리합니다. 테이블은 `public.items`이고, 기본 키는 `(user_id, id)`이며, RLS로 자기 행만 접근할 수 있고, `anon` 역할은 권한이 없습니다. 화면은 항상 localStorage 기준으로 그리고, `persist()`가 `cloudSchedulePush()`를 불러 마지막 동기화 상태(`when-did-i:synced`, userId별)와 비교한 차이만 upsert/delete합니다. 로그인할 때, 탭으로 돌아올 때, 온라인으로 복귀할 때 `cloudPull()`이 `mergeItems()`로 3-way 병합합니다. 로그아웃하면 기기 기록을 지웁니다(다른 사람이 같은 기기로 로그인해도 기록이 섞이지 않도록).

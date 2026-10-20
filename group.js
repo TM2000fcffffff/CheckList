@@ -6,6 +6,7 @@
 const GROUP_KEY = 'when-did-i:group';
 const JOIN_KEY = 'when-did-i:join';
 const SPIN_MS = 2600;
+const DEFAULT_CHORE_ICON = '🧹';
 const RECENT_SPINS = 8;
 
 const group = {
@@ -21,6 +22,7 @@ const group = {
   loading: false,
   deleteArmed: null,
   leaveArmed: false,
+  iconTarget: null, // 'new'(추가 폼) 또는 집안일 id(카드에서 변경)
 };
 
 const g$ = (id) => document.getElementById(id);
@@ -219,6 +221,49 @@ async function addChore(name, icon, cycleDays) {
   await loadGroupData();
 }
 
+async function updateChoreIcon(id, icon) {
+  const { error } = await cloud.client.from('group_chores').update({ icon }).eq('id', id);
+  if (error) return showToast(friendlyError(error));
+  await loadGroupData();
+}
+
+/* ===== 아이콘 고르기 ===== */
+
+function openIconDialog(target, current) {
+  group.iconTarget = target;
+  const chore = target === 'new' ? null : group.chores.find((c) => c.id === target);
+  g$('icon-dialog-title').textContent = chore ? `${chore.name} 아이콘 바꾸기` : '아이콘 고르기';
+  g$('icon-dialog-grid').replaceChildren(
+    ...EMOJIS.map((emoji) => {
+      const button = el('button', '', emoji);
+      button.type = 'button';
+      button.setAttribute('aria-label', `아이콘 ${emoji}`);
+      button.setAttribute('aria-pressed', String(emoji === current));
+      button.addEventListener('click', () => pickIcon(emoji));
+      return button;
+    })
+  );
+  g$('icon-dialog').showModal();
+}
+
+// 추가 폼의 아이콘 (글자로 입력할 수 없고, 고르거나 이미지를 올려서만 바꿉니다)
+function setNewChoreIcon(icon) {
+  const button = g$('group-chore-icon');
+  button.dataset.icon = icon;
+  renderIcon(button, icon);
+}
+
+function pickIcon(icon) {
+  const target = group.iconTarget;
+  g$('icon-dialog').close();
+  if (target === 'new') {
+    setNewChoreIcon(icon);
+  } else if (target) {
+    const chore = group.chores.find((c) => c.id === target);
+    if (chore && chore.icon !== icon) updateChoreIcon(target, icon);
+  }
+}
+
 async function deleteChore(id) {
   const chore = group.chores.find((c) => c.id === id);
   const { error } = await cloud.client.from('group_chores').delete().eq('id', id);
@@ -313,7 +358,7 @@ async function playRoulette(spin) {
 
   display.classList.remove('is-result');
   display.classList.add('is-spinning');
-  g$('roulette-chore-label').textContent = chore ? `${chore.icon} ${chore.name}` : '';
+  g$('roulette-chore-label').replaceChildren(chore ? iconWithText(chore.icon, chore.name) : '');
 
   const start = performance.now();
   let index = Math.floor(Math.random() * names.length);
@@ -395,7 +440,7 @@ function renderGroupView() {
   // 룰렛 집안일 선택
   const rouletteChore = g$('roulette-chore');
   const prev = rouletteChore.value;
-  rouletteChore.replaceChildren(...group.chores.map((c) => new Option(`${c.icon} ${c.name}`, c.id)));
+  rouletteChore.replaceChildren(...group.chores.map((c) => new Option(`${iconLabel(c.icon)} ${c.name}`, c.id)));
   if (group.chores.some((c) => c.id === prev)) rouletteChore.value = prev;
   g$('roulette-empty').hidden = group.chores.length > 0;
   g$('roulette-controls').hidden = group.chores.length === 0;
@@ -417,10 +462,12 @@ function renderSpins() {
       const time = new Date(spin.created_at);
       const when = `${time.getMonth() + 1}/${time.getDate()} ${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
       const text = el('span', 'spin-text');
-      text.append(
-        el('span', 'spin-when', when),
-        el('span', 'spin-what', `${chore ? chore.icon + ' ' + chore.name : '삭제된 집안일'} → 🏆 ${memberName(spin.picked_user_id)}`)
+      const what = el('span', 'spin-what');
+      what.append(
+        chore ? iconWithText(chore.icon, chore.name) : '삭제된 집안일',
+        ` → 🏆 ${memberName(spin.picked_user_id)}`
       );
+      text.append(el('span', 'spin-when', when), what);
       li.append(text);
 
       if (spin.done_at) {
@@ -456,7 +503,13 @@ function renderGroupChores() {
       title.append(el('span', 'item-name', chore.name), el('span', 'item-badge', LEVEL_LABEL[status.level]));
       const meta = last ? `${describe(item, status)} · ${memberName(last.user_id)}` : describe(item, status);
       text.append(title, el('span', 'item-meta', meta));
-      main.append(el('span', 'item-icon', chore.icon), text);
+      // 아이콘을 누르면 바꿀 수 있습니다.
+      const icon = el('button', 'item-icon icon-edit');
+      renderIcon(icon, chore.icon);
+      icon.type = 'button';
+      icon.setAttribute('aria-label', `${chore.name} 아이콘 바꾸기`);
+      icon.addEventListener('click', () => openIconDialog(chore.id, chore.icon));
+      main.append(icon, text);
 
       const del = el('button', `chore-delete${group.deleteArmed === chore.id ? ' armed' : ''}`, group.deleteArmed === chore.id ? '삭제?' : '🗑');
       del.type = 'button';
@@ -534,9 +587,23 @@ g$('group-chore-form').addEventListener('submit', (event) => {
   if (!name) return g$('group-chore-name').focus();
   const cycle = Number(g$('group-chore-cycle').value);
   const cycleDays = Number.isFinite(cycle) && cycle >= 1 && cycle <= 3650 ? Math.round(cycle) : null;
-  addChore(name, g$('group-chore-icon').value.trim(), cycleDays);
+  addChore(name, g$('group-chore-icon').dataset.icon || DEFAULT_CHORE_ICON, cycleDays);
+  setNewChoreIcon(DEFAULT_CHORE_ICON);
   g$('group-chore-name').value = '';
   g$('group-chore-cycle').value = '';
+});
+
+setNewChoreIcon(DEFAULT_CHORE_ICON);
+g$('group-chore-icon').addEventListener('click', () => openIconDialog('new', g$('group-chore-icon').dataset.icon));
+g$('icon-dialog-upload').addEventListener('click', () => g$('icon-dialog-file').click());
+g$('icon-dialog-file').addEventListener('change', () => handleIconFile(g$('icon-dialog-file'), pickIcon));
+g$('icon-dialog-close').addEventListener('click', () => g$('icon-dialog').close());
+g$('icon-dialog').addEventListener('click', (event) => {
+  // 바깥(배경)을 누르면 닫기
+  if (event.target !== g$('icon-dialog')) return;
+  const r = g$('icon-dialog').getBoundingClientRect();
+  const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+  if (!inside) g$('icon-dialog').close();
 });
 
 g$('leave-button').addEventListener('click', () => {
