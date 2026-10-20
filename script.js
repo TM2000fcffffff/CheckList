@@ -44,6 +44,11 @@ const els = {
   toastUndo: $('toast-undo'),
   sortWrap: $('sort-wrap'),
   syncStatus: $('sync-status'),
+  loginButton: $('login-button'),
+  logoutButton: $('logout-button'),
+  userInfo: $('user-info'),
+  userName: $('user-name'),
+  userAvatar: $('user-avatar'),
   viewTabs: document.querySelectorAll('.view-tabs [role="tab"]'),
   listView: $('list-view'),
   calendarView: $('calendar-view'),
@@ -369,15 +374,44 @@ function persist() {
 
 const SYNC_LABEL = {
   connecting: '☁️ 연결 중…',
-  syncing: '☁️ 저장 중…',
-  synced: '☁️ 클라우드에 저장됨',
-  offline: '📴 오프라인 · 기기에만 저장됨',
-  error: '⚠️ 클라우드 연결 실패 · 기기에만 저장됨',
+  syncing: '☁️ 동기화 중…',
+  synced: '☁️ 동기화됨',
+  local: '📱 이 기기에만 저장 중',
+  offline: '📴 오프라인 · 기기에 저장됨',
+  error: '⚠️ 동기화 실패 · 기기에 저장됨',
+  unavailable: '📱 이 기기에만 저장 중',
 };
 
 function renderSyncStatus(state) {
   els.syncStatus.dataset.state = state;
   els.syncStatus.textContent = SYNC_LABEL[state] || '';
+}
+
+/* ===== 계정 ===== */
+
+function renderUser(user) {
+  els.loginButton.hidden = !!user;
+  els.loginButton.disabled = false;
+  els.userInfo.hidden = !user;
+  if (!user) return;
+
+  const meta = user.user_metadata || {};
+  els.userName.textContent = meta.full_name || meta.name || user.email || 'Google 계정';
+  els.userAvatar.hidden = !meta.avatar_url;
+  if (meta.avatar_url) els.userAvatar.src = meta.avatar_url;
+}
+
+async function handleLogin() {
+  els.loginButton.disabled = true;
+  await cloudSignIn();
+  els.loginButton.disabled = false;
+}
+
+async function handleLogout() {
+  els.logoutButton.disabled = true;
+  await cloudSignOut();
+  els.logoutButton.disabled = false;
+  showToast('로그아웃했어요. 기록은 클라우드에 남아 있어요');
 }
 
 function findItem(id) {
@@ -638,4 +672,8 @@ cloudInit({
     render();
   },
   onStatus: renderSyncStatus,
+  onUser: renderUser,
 });
+
+els.loginButton.addEventListener('click', handleLogin);
+els.logoutButton.addEventListener('click', handleLogout);
