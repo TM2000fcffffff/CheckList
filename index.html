@@ -41,6 +41,7 @@
     <div class="view-tabs" role="tablist" aria-label="보기 방식">
       <button type="button" role="tab" data-view="list" aria-selected="true">목록</button>
       <button type="button" role="tab" data-view="calendar" aria-selected="false">달력</button>
+      <button type="button" role="tab" data-view="group" aria-selected="false">그룹</button>
     </div>
   </header>
 
@@ -97,6 +98,86 @@
         <p id="cal-detail-desc" class="cal-detail-desc"></p>
         <ul id="cal-due-list" class="cal-due-list" hidden></ul>
         <ul id="cal-detail-list" class="cal-chips"></ul>
+      </div>
+    </section>
+
+    <!-- 그룹 보기 -->
+    <section id="group-view" class="group" hidden>
+      <!-- 로그인 전 -->
+      <div id="group-login" class="group-card group-intro">
+        <p class="group-intro-icon" aria-hidden="true">🎰</p>
+        <p class="group-intro-title">함께 쓰는 집안일 룰렛</p>
+        <p id="group-login-desc" class="group-intro-desc"></p>
+      </div>
+
+      <!-- 그룹 만들기 / 참여 -->
+      <div id="group-start" class="group-start" hidden>
+        <form id="group-create-form" class="group-card">
+          <h2 class="group-card-title">새 그룹 만들기</h2>
+          <p class="group-card-desc">가족, 룸메이트, 동기들과 집안일을 나눠 보세요.</p>
+          <div class="inline-form">
+            <input id="group-name-input" type="text" maxlength="30" placeholder="예: 우리 집" autocomplete="off" aria-label="그룹 이름">
+            <button type="submit" class="btn primary">만들기</button>
+          </div>
+        </form>
+        <form id="group-join-form" class="group-card">
+          <h2 class="group-card-title">초대 코드로 참여</h2>
+          <div class="inline-form">
+            <input id="group-code-input" type="text" maxlength="12" placeholder="예: 3FA9C1" autocomplete="off" aria-label="초대 코드">
+            <button type="submit" class="btn">참여</button>
+          </div>
+        </form>
+        <button type="button" id="group-start-cancel" class="text-button group-start-cancel">내 그룹으로 돌아가기</button>
+      </div>
+
+      <!-- 그룹 화면 -->
+      <div id="group-main" hidden>
+        <div class="group-card">
+          <div class="group-head">
+            <label class="group-select-wrap">
+              <span class="visually-hidden">그룹 선택</span>
+              <select id="group-select"></select>
+            </label>
+            <button type="button" id="invite-button" class="btn small primary">초대하기</button>
+          </div>
+          <p class="group-code-line">초대 코드 <strong id="group-code"></strong></p>
+          <ul id="group-members" class="member-list"></ul>
+        </div>
+
+        <!-- 룰렛 -->
+        <div class="group-card roulette">
+          <h2 class="group-card-title">🎰 누가 할까? 룰렛</h2>
+          <div id="roulette-display" class="roulette-display" aria-live="polite">
+            <span id="roulette-chore-label" class="roulette-chore-label"></span>
+            <span id="roulette-name" class="roulette-name">?</span>
+          </div>
+          <p id="roulette-empty" class="group-card-desc">아래에서 그룹 집안일을 먼저 추가해 주세요.</p>
+          <div id="roulette-controls" class="inline-form">
+            <select id="roulette-chore" aria-label="룰렛을 돌릴 집안일"></select>
+            <button type="button" id="roulette-button" class="btn primary">돌리기</button>
+          </div>
+
+          <div id="spin-section" class="spin-section" hidden>
+            <h3 class="spin-title">최근 결과</h3>
+            <ul id="spin-list" class="spin-list"></ul>
+          </div>
+        </div>
+
+        <!-- 그룹 집안일 -->
+        <div class="group-section-head">
+          <h2 class="group-card-title">그룹 집안일</h2>
+        </div>
+        <ul id="group-chore-list" class="item-list"></ul>
+        <p id="group-chore-empty" class="group-card-desc group-chore-empty">아직 그룹 집안일이 없어요.</p>
+
+        <form id="group-chore-form" class="group-card group-chore-form">
+          <input id="group-chore-icon" type="text" maxlength="8" placeholder="🧹" aria-label="아이콘" autocomplete="off">
+          <input id="group-chore-name" type="text" maxlength="30" placeholder="집안일 이름" aria-label="집안일 이름" autocomplete="off">
+          <input id="group-chore-cycle" type="number" min="1" max="3650" inputmode="numeric" placeholder="주기(일)" aria-label="주기(일)">
+          <button type="submit" class="btn primary">추가</button>
+        </form>
+
+        <button type="button" id="leave-button" class="btn danger delete-button">그룹 나가기</button>
       </div>
     </section>
   </main>
@@ -170,5 +251,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="sync.js"></script>
   <script src="script.js"></script>
+  <script src="group.js"></script>
 </body>
 </html>

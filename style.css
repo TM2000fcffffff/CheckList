@@ -189,7 +189,7 @@ button { cursor: pointer; }
 
 .view-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin-top: 14px;
   padding: 4px;
@@ -911,3 +911,249 @@ button { cursor: pointer; }
     font-size: 0.8125rem;
   }
 }
+
+/* ===== 그룹 ===== */
+.group-card {
+  margin-bottom: 14px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.group-card-title {
+  margin: 0 0 4px;
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.group-card-desc {
+  margin: 0 0 12px;
+  color: var(--text-sub);
+  font-size: 0.9375rem;
+}
+
+.group-intro { text-align: center; padding: 32px 16px; }
+.group-intro-icon { margin: 0; font-size: 3rem; line-height: 1.2; }
+.group-intro-title { margin: 8px 0 4px; font-size: 1.25rem; font-weight: 800; }
+.group-intro-desc { margin: 0; color: var(--text-sub); }
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+}
+
+.inline-form input,
+.inline-form select,
+.group-chore-form input,
+.group-select-wrap select {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 1rem;
+}
+
+.group-start-cancel { display: block; margin: 0 auto 14px; }
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-select-wrap { flex: 1; min-width: 0; display: flex; }
+.group-select-wrap select { font-weight: 800; font-size: 1.0625rem; }
+
+.group-code-line {
+  margin: 10px 0 12px;
+  color: var(--text-sub);
+  font-size: 0.9375rem;
+}
+
+.group-code-line strong {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  letter-spacing: 0.1em;
+}
+
+.member-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.member-avatar {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-text);
+  font-size: 0.75rem;
+  object-fit: cover;
+}
+
+/* 룰렛 */
+.roulette-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 116px;
+  margin: 12px 0;
+  padding: 16px;
+  border: 2px dashed var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.roulette-chore-label {
+  min-height: 1.4em;
+  color: var(--text-sub);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.roulette-name {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.roulette-display.is-spinning {
+  border-color: var(--primary);
+  animation: roulette-glow 0.6s ease-in-out infinite alternate;
+}
+
+.roulette-display.is-spinning .roulette-name { color: var(--primary); }
+
+.roulette-display.is-result {
+  border-style: solid;
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, var(--surface-2));
+}
+
+.roulette-display.is-result .roulette-name { animation: roulette-pop 0.5s ease; }
+
+@keyframes roulette-glow {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent); }
+  to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary) 25%, transparent); }
+}
+
+@keyframes roulette-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.spin-section { margin-top: 16px; }
+
+.spin-title {
+  margin: 0 0 8px;
+  color: var(--text-sub);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.spin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spin-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.spin-item.is-done { opacity: 0.6; }
+
+.spin-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.spin-when { color: var(--text-sub); font-size: 0.75rem; }
+.spin-what { font-size: 0.9375rem; font-weight: 600; }
+.spin-state { flex-shrink: 0; font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
+
+/* 그룹 집안일 */
+.group-section-head { margin: 22px 0 10px; }
+.group-chore-empty { text-align: center; }
+
+#group-chore-list { margin-bottom: 12px; }
+
+.chore-delete {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.chore-delete.armed {
+  padding: 0 8px;
+  background: var(--danger);
+  color: var(--danger-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.group-chore-form {
+  display: grid;
+  grid-template-columns: 56px 1fr 92px auto;
+  gap: 8px;
+  padding: 12px;
+}
+
+.group-chore-form input { padding: 8px 10px; }
+#group-chore-icon { text-align: center; }
+
+@media (max-width: 480px) {
+  .group-chore-form { grid-template-columns: 52px 1fr 80px; }
+  .group-chore-form button { grid-column: 1 / -1; }
+}
+
+/* 그룹 집안일 카드는 삭제 버튼이 더 있어 이름이 잘리지 않게 조금 줄입니다. */
+#group-chore-list .item-icon { width: 40px; height: 40px; font-size: 1.375rem; }
+#group-chore-list .item-main { gap: 10px; padding: 6px 4px; }
+#group-chore-list .done-button { min-width: 64px; padding: 0 10px; }
+#group-chore-list .chore-delete { min-width: 32px; padding: 0; font-size: 0.9375rem; }
+#group-chore-list .chore-delete.armed { padding: 0 8px; }

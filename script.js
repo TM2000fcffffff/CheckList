@@ -52,6 +52,7 @@ const els = {
   viewTabs: document.querySelectorAll('.view-tabs [role="tab"]'),
   listView: $('list-view'),
   calendarView: $('calendar-view'),
+  groupView: $('group-view'),
   calTitle: $('cal-title'),
   calSummary: $('cal-summary'),
   calPrev: $('cal-prev'),
@@ -153,7 +154,10 @@ function setView(view) {
   }
   els.listView.hidden = view !== 'list';
   els.calendarView.hidden = view !== 'calendar';
+  els.groupView.hidden = view !== 'group';
   els.sortWrap.hidden = view !== 'list';
+  els.addButton.hidden = view === 'group'; // [+]는 개인 항목 추가용
+  if (view === 'group') renderGroupView();
   render();
 }
 
@@ -739,7 +743,10 @@ cloudInit({
     render();
   },
   onStatus: renderSyncStatus,
-  onUser: renderUser,
+  onUser: (user) => {
+    renderUser(user);
+    groupOnUser(user);
+  },
 });
 
 els.loginButton.addEventListener('click', handleLogin);
