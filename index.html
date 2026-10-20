@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f6bed">
+  <meta name="description" content="마지막으로 한 날부터 며칠 지났는지 알려 주는 기록장">
+  <title>그거 언제 했더라?</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <h1>그거 언제 했더라?</h1>
+      <label class="sort" id="sort-wrap">
+        <span class="visually-hidden">정렬</span>
+        <select id="sort-select">
+          <option value="urgent">급한 순</option>
+          <option value="oldest">오래된 순</option>
+          <option value="name">이름순</option>
+        </select>
+      </label>
+    </div>
+    <div class="view-tabs" role="tablist" aria-label="보기 방식">
+      <button type="button" role="tab" data-view="list" aria-selected="true">목록</button>
+      <button type="button" role="tab" data-view="calendar" aria-selected="false">달력</button>
+    </div>
+  </header>
+
+  <p id="storage-warning" class="warning" hidden>
+    이 브라우저에서는 기록이 저장되지 않을 수 있어요. (시크릿 모드 등)
+  </p>
+
+  <main class="app-main">
+    <!-- 목록 보기 -->
+    <section id="list-view">
+      <ul id="item-list" class="item-list"></ul>
+
+      <section id="empty-state" class="empty" hidden>
+        <p class="empty-title">아직 항목이 없어요</p>
+        <p class="empty-desc">자주 잊는 일을 골라 바로 추가해 보세요.</p>
+        <ul id="suggestion-list" class="suggestions"></ul>
+      </section>
+    </section>
+
+    <!-- 달력 보기 -->
+    <section id="calendar-view" class="calendar" hidden>
+      <div class="cal-card">
+        <div class="cal-toolbar">
+          <button type="button" id="cal-prev" class="cal-nav" aria-label="이전 달">‹</button>
+          <div class="cal-heading">
+            <h2 id="cal-title"></h2>
+            <p id="cal-summary" class="cal-summary"></p>
+          </div>
+          <button type="button" id="cal-next" class="cal-nav" aria-label="다음 달">›</button>
+        </div>
+
+        <div class="cal-options">
+          <label>
+            <span class="visually-hidden">항목 필터</span>
+            <select id="cal-filter"></select>
+          </label>
+          <button type="button" id="cal-today" class="btn small">오늘</button>
+        </div>
+
+        <div class="cal-weekdays" aria-hidden="true">
+          <span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span>
+        </div>
+        <div id="cal-grid" class="cal-grid"></div>
+      </div>
+
+      <div class="cal-detail">
+        <h3 id="cal-detail-title"></h3>
+        <p id="cal-detail-desc" class="cal-detail-desc"></p>
+        <ul id="cal-detail-list" class="cal-chips"></ul>
+      </div>
+    </section>
+  </main>
+
+  <button id="add-button" class="fab" type="button" aria-label="항목 추가">+</button>
+
+  <!-- 항목 추가/수정 -->
+  <dialog id="item-dialog" class="dialog">
+    <form id="item-form" novalidate>
+      <h2 id="dialog-title">항목 추가</h2>
+
+      <label class="field">
+        <span class="field-label">아이콘</span>
+        <input id="field-icon" type="text" maxlength="8" placeholder="📌" autocomplete="off">
+      </label>
+      <div id="emoji-picker" class="emoji-picker" aria-label="아이콘 선택"></div>
+
+      <label class="field">
+        <span class="field-label">이름 <em>*</em></span>
+        <input id="field-name" type="text" maxlength="30" placeholder="예: 이불 빨래" required autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span class="field-label">주기 (선택)</span>
+        <span class="inline">
+          <input id="field-cycle" type="number" min="1" max="3650" inputmode="numeric" placeholder="14">
+          <span>일마다</span>
+        </span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">마지막으로 한 날 (선택)</span>
+        <input id="field-last" type="date">
+      </label>
+
+      <p id="form-error" class="form-error" hidden></p>
+
+      <div class="dialog-actions">
+        <button type="button" id="cancel-button" class="btn">취소</button>
+        <button type="submit" class="btn primary">저장</button>
+      </div>
+      <button type="button" id="delete-button" class="btn danger delete-button" hidden>이 항목 삭제</button>
+    </form>
+  </dialog>
+
+  <!-- 토스트 -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-message"></span>
+    <button type="button" id="toast-undo" class="toast-undo">취소</button>
+  </div>
+
+  <!-- 항목 카드 템플릿 -->
+  <template id="item-template">
+    <li class="item">
+      <button type="button" class="item-main">
+        <span class="item-icon"></span>
+        <span class="item-text">
+          <span class="item-title">
+            <span class="item-name"></span>
+            <span class="item-badge"></span>
+          </span>
+          <span class="item-meta"></span>
+        </span>
+      </button>
+      <button type="button" class="done-button">했어요</button>
+    </li>
+  </template>
+
+  <script src="date-utils.js"></script>
+  <script src="storage.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
