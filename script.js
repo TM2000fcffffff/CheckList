@@ -16,7 +16,8 @@ const SUGGESTIONS = [
 ];
 
 const LEVEL_LABEL = { ok: '여유', soon: '곧 할 때', over: '지남', none: '' };
-const TOAST_MS = 5000;
+const TOAST_MS = 2500; // 알림만 있을 때
+const TOAST_UNDO_MS = 5000; // [취소]가 있을 때는 누를 시간을 넉넉히
 
 const $ = (id) => document.getElementById(id);
 
@@ -657,7 +658,7 @@ function showToast(message, onUndo = null) {
   undoAction = onUndo;
   els.toastUndo.hidden = !onUndo;
   els.toast.hidden = false;
-  toastTimer = setTimeout(hideToast, TOAST_MS);
+  toastTimer = setTimeout(hideToast, onUndo ? TOAST_UNDO_MS : TOAST_MS);
 }
 
 function hideToast() {
@@ -667,6 +668,11 @@ function hideToast() {
 }
 
 /* ===== 이벤트 연결 ===== */
+
+// 토스트를 누르면 바로 닫습니다. ([취소] 버튼은 따로 처리)
+els.toast.addEventListener('click', (event) => {
+  if (!event.target.closest('#toast-undo')) hideToast();
+});
 
 els.list.addEventListener('click', (event) => {
   const card = event.target.closest('.item');
