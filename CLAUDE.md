@@ -46,5 +46,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 모바일 기준은 `max-width: 480px`입니다. 모바일 상단은 grid + `display: contents`로 두 줄(제목·동기화·계정 / 탭·정렬)로 배치하므로, 헤더에 요소를 추가하면 `grid-template-areas`도 고칩니다.
 - Google 로그인 앱은 테스트 모드라서 Google Cloud에 등록한 테스트 사용자만 로그인할 수 있습니다.
 - `<dialog>`는 열려 있을 때 `showModal()`을 다시 부르면 오류가 납니다. 배경을 눌러 닫을 때는 좌표로 판단합니다(`event.target`만 보면 안쪽 여백을 눌러도 닫힘).
+- `googlef2bd8a129c3794f7.html`은 Google Search Console 소유권 확인 파일입니다(속성 `https://checklist-five-pi.vercel.app/`, sitemap 제출 완료). 지우면 소유권이 풀리므로 그대로 둡니다. FAQ 문구를 바꾸면 본문 `.faq`와 `<head>`의 FAQPage JSON-LD를 함께 고칩니다.
 - 코드 주석과 커밋 메시지는 한국어로 씁니다.
 - Windows PowerShell 5.1에서 `git commit -m`에 큰따옴표가 들어가면 인자가 깨집니다. 메시지를 파일로 저장해 `git commit -F <파일>`로 커밋하거나 Bash를 사용합니다.
