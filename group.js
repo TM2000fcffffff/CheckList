@@ -22,6 +22,9 @@ const group = {
   loading: false,
   deleteArmed: null,
   leaveArmed: false,
+  kickArmed: null, // 내보내려고 한 번 누른 그룹원 id
+  resetArmed: false,
+  invite: null, // 초대 링크로 들어와 확인을 기다리는 그룹 { code, name, memberCount }
   iconTarget: null, // 'new'(추가 폼) 또는 집안일 id(카드에서 변경)
 };
 
@@ -68,8 +71,29 @@ function memberName(userId) {
 
 function friendlyError(error) {
   const msg = (error && error.message) || '';
-  if (/초대 코드|로그인|당첨|그룹 집안일/.test(msg)) return msg;
+  if (/초대 코드|로그인|당첨|그룹 집안일|시도가|방금|그룹장|개까지/.test(msg)) return msg;
   return '문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
+}
+
+// 그룹원 사진은 Google 프로필 주소만 씁니다. (다른 주소로 바꿔 추적하는 것 방지)
+function isSafeAvatar(url) {
+  return typeof url === 'string' && url.startsWith('https://lh3.googleusercontent.com/');
+}
+
+function isGroupOwner() {
+  const current = currentGroup();
+  return !!(current && cloud.user && current.created_by === cloud.user.id);
+}
+
+// 로그아웃할 때 이 기기에 남은 그룹 정보를 지웁니다.
+function forgetGroup() {
+  group.invite = null;
+  try {
+    localStorage.removeItem(GROUP_KEY);
+    sessionStorage.removeItem(JOIN_KEY);
+  } catch {
+    // 무시
+  }
 }
 
 /* ===== 불러오기 ===== */
@@ -83,21 +107,28 @@ async function groupOnUser(user) {
     return;
   }
 
+  // 초대 링크로 들어왔으면 바로 가입하지 않고, 어떤 그룹인지 보여 주고 확인을 받습니다.
   const code = takeJoinCode();
-  if (code) {
-    try {
-      const { data, error } = await cloud.client.rpc('join_group', { p_code: code });
-      if (error) throw error;
-      group.currentId = data.id;
-      saveCurrentGroup();
-      showToast(`🎉 '${data.name}' 그룹에 들어왔어요`);
-      setView('group');
-    } catch (error) {
-      showToast(friendlyError(error));
-    }
-  }
+  if (code) await previewInvite(code);
 
   await loadGroups();
+}
+
+async function previewInvite(code) {
+  const { data, error } = await cloud.client.rpc('peek_group', { p_code: code });
+  if (error) return showToast(friendlyError(error));
+  const found = data && data[0];
+  if (!found) {
+    setView('group');
+    return showToast('초대 코드를 찾을 수 없어요. 링크가 바뀌었는지 물어보세요');
+  }
+  if (found.already) {
+    await joinGroup(code); // 이미 들어가 있는 그룹이면 그 그룹을 엽니다.
+    setView('group');
+    return;
+  }
+  group.invite = { code, name: found.name, memberCount: found.member_count };
+  setView('group');
 }
 
 async function loadGroups() {
@@ -207,10 +238,50 @@ async function createGroup(name) {
 async function joinGroup(code) {
   const { data, error } = await cloud.client.rpc('join_group', { p_code: code });
   if (error) return showToast(friendlyError(error));
+  if (!data || !data.id) return showToast('초대 코드를 찾을 수 없어요');
   group.currentId = data.id;
   saveCurrentGroup();
   showToast(`🎉 '${data.name}' 그룹에 들어왔어요`);
   await loadGroups();
+}
+
+async function kickMember(userId) {
+  const name = memberName(userId);
+  const { error } = await cloud.client
+    .from('group_members')
+    .delete()
+    .eq('group_id', group.currentId)
+    .eq('user_id', userId);
+  if (error) return showToast(friendlyError(error));
+  showToast(`${name} 님을 그룹에서 내보냈어요`);
+  await loadGroupData();
+}
+
+// 예전 초대 링크·코드는 더 이상 쓸 수 없게 됩니다.
+async function resetInviteCode() {
+  const { data, error } = await cloud.client.rpc('reset_invite_code', { p_group_id: group.currentId });
+  if (error) return showToast(friendlyError(error));
+  const current = currentGroup();
+  if (current) current.invite_code = data;
+  showToast('초대 코드를 새로 만들었어요. 예전 링크는 이제 쓸 수 없어요');
+  renderGroupView();
+}
+
+// 버튼을 한 번 누르면 확인 상태로 바꾸고, 3초 안에 한 번 더 누르면 실행합니다.
+function armOnce(key, value, action) {
+  if (group[key] === value) {
+    group[key] = key === 'resetArmed' ? false : null;
+    renderGroupView();
+    action();
+    return;
+  }
+  group[key] = value;
+  renderGroupView();
+  setTimeout(() => {
+    if (group[key] !== value) return;
+    group[key] = key === 'resetArmed' ? false : null;
+    renderGroupView();
+  }, 3000);
 }
 
 async function addChore(name, icon, cycleDays) {
@@ -404,10 +475,18 @@ function renderGroupView() {
     ? '초대받은 그룹에 들어가려면 Google로 로그인해 주세요.'
     : 'Google로 로그인하면 가족·룸메이트와 그룹을 만들어 집안일 룰렛을 돌릴 수 있어요.';
 
+  const invite = loggedIn ? group.invite : null;
+  g$('group-invite').hidden = !invite;
+  if (invite) {
+    g$('group-invite-title').textContent = `'${invite.name}' 그룹에 참여할까요?`;
+    g$('group-invite-desc').textContent =
+      `지금 ${invite.memberCount}명이 함께 쓰고 있어요. 참여하면 그룹원에게 내 Google 이름과 프로필 사진이 보여요.`;
+  }
+
   const current = currentGroup();
-  g$('group-start').hidden = !loggedIn || group.loading || !!current;
-  g$('group-main').hidden = !loggedIn || !current;
-  if (!loggedIn || !current) return;
+  g$('group-start').hidden = !loggedIn || group.loading || !!current || !!invite;
+  g$('group-main').hidden = !loggedIn || !current || !!invite;
+  if (!loggedIn || !current || invite) return;
 
   // 그룹 선택 (여러 그룹에 속한 경우)
   const select = g$('group-select');
@@ -418,12 +497,17 @@ function renderGroupView() {
   select.value = current.id;
 
   g$('group-code').textContent = current.invite_code;
+  const owner = isGroupOwner();
+  const resetButton = g$('reset-code-button');
+  resetButton.hidden = !owner;
+  resetButton.textContent = group.resetArmed ? '한 번 더 누르면 바뀌어요' : '코드 바꾸기';
+  resetButton.classList.toggle('armed', group.resetArmed);
 
-  // 멤버
+  // 멤버 (그룹장은 다른 그룹원을 내보낼 수 있음)
   g$('group-members').replaceChildren(
     ...group.members.map((m) => {
       const chip = el('li', 'member-chip');
-      if (m.avatar_url) {
+      if (isSafeAvatar(m.avatar_url)) {
         const img = el('img', 'member-avatar');
         img.src = m.avatar_url;
         img.alt = '';
@@ -432,7 +516,16 @@ function renderGroupView() {
       } else {
         chip.append(el('span', 'member-avatar', m.display_name.slice(0, 1)));
       }
-      chip.append(el('span', '', m.user_id === cloud.user.id ? `${m.display_name} (나)` : m.display_name));
+      const me = m.user_id === cloud.user.id;
+      chip.append(el('span', '', me ? `${m.display_name} (나)` : m.display_name));
+      if (owner && !me) {
+        const armed = group.kickArmed === m.user_id;
+        const kick = el('button', `member-kick${armed ? ' armed' : ''}`, armed ? '내보내기?' : '✕');
+        kick.type = 'button';
+        kick.setAttribute('aria-label', `${m.display_name} 내보내기`);
+        kick.addEventListener('click', () => armOnce('kickArmed', m.user_id, () => kickMember(m.user_id)));
+        chip.append(kick);
+      }
       return chip;
     })
   );
@@ -499,10 +592,10 @@ function renderGroupChores() {
       const li = el('li', `item level-${status.level}`);
       const main = el('div', 'item-main');
       const text = el('span', 'item-text');
-      const title = el('span', 'item-title');
-      title.append(el('span', 'item-name', chore.name), el('span', 'item-badge', LEVEL_LABEL[status.level]));
+      const sub = el('span', 'item-sub');
       const meta = last ? `${describe(item, status)} · ${memberName(last.user_id)}` : describe(item, status);
-      text.append(title, el('span', 'item-meta', meta));
+      sub.append(el('span', 'item-badge', LEVEL_LABEL[status.level]), el('span', 'item-meta', meta));
+      text.append(el('span', 'item-name', chore.name), sub);
       // 아이콘을 누르면 바꿀 수 있습니다.
       const icon = el('button', 'item-icon icon-edit');
       renderIcon(icon, chore.icon);
@@ -535,7 +628,7 @@ function renderGroupChores() {
       done.setAttribute('aria-label', `${chore.name} 했어요`);
       done.addEventListener('click', () => doneChore(chore.id));
 
-      li.append(main, del, done);
+      li.append(main, del, done, createProgress(status));
       return li;
     })
   );
@@ -579,6 +672,21 @@ g$('group-start-cancel').addEventListener('click', () => {
 });
 
 g$('invite-button').addEventListener('click', shareInvite);
+g$('reset-code-button').addEventListener('click', () => armOnce('resetArmed', true, resetInviteCode));
+g$('group-login-button').addEventListener('click', handleLogin);
+
+g$('group-invite-accept').addEventListener('click', async () => {
+  const invite = group.invite;
+  if (!invite) return;
+  group.invite = null;
+  await joinGroup(invite.code);
+  renderGroupView();
+});
+
+g$('group-invite-cancel').addEventListener('click', () => {
+  group.invite = null;
+  renderGroupView();
+});
 g$('roulette-button').addEventListener('click', spinRoulette);
 
 g$('group-chore-form').addEventListener('submit', (event) => {

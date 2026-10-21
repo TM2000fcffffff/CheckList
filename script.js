@@ -15,6 +15,25 @@ const SUGGESTIONS = [
   { name: '부모님께 전화', icon: '📞', cycleDays: 7 },
 ];
 
+// 이름에 이 단어가 들어 있으면 아이콘을 자동으로 골라 줍니다. (앞에 있는 것이 먼저)
+const ICON_KEYWORDS = [
+  ['화분', '🌱'], ['식물', '🌱'], ['물 주기', '🌱'], ['물주기', '🌱'],
+  ['이불', '🛏️'], ['침대', '🛏️'], ['빨래', '🧺'], ['세탁', '🧺'],
+  ['화장실', '🚽'], ['변기', '🚽'], ['청소', '🧹'], ['냉장고', '🧊'],
+  ['분리수거', '♻️'], ['재활용', '♻️'], ['정수기', '💧'], ['필터', '💧'],
+  ['면도', '🪒'], ['머리', '💇'], ['미용', '💇'], ['손톱', '💅'],
+  ['칫솔', '🦷'], ['치과', '🏥'], ['병원', '🏥'], ['검진', '🏥'],
+  ['영양제', '💊'], ['약 먹', '💊'], ['자동차', '🚗'], ['차량', '🚗'], ['엔진', '🚗'], ['세차', '🚗'],
+  ['부모님', '📞'], ['전화', '📞'], ['강아지', '🐶'], ['산책', '🐶'], ['반려', '🐶'],
+  ['샴푸', '🧴'], ['로션', '🧴'], ['비누', '🧼'], ['수건', '🧼'],
+];
+
+const CYCLE_CHIPS = [[7, '1주'], [14, '2주'], [30, '1달'], [90, '3달'], [180, '6달'], [365, '1년']];
+const LAST_CHIPS = [[0, '오늘'], [1, '어제'], [7, '1주 전'], [14, '2주 전'], [30, '1달 전'], [null, '모름']];
+const HISTORY_PREVIEW = 5;
+const SUGGEST_UNTIL = 3; // 항목이 이보다 적으면 추천 목록을 계속 보여 줍니다.
+const IMPORT_MAX_BYTES = 5 * 1024 * 1024;
+
 const LEVEL_LABEL = { ok: '여유', soon: '곧 할 때', over: '지남', none: '' };
 const TOAST_MS = 2500; // 알림만 있을 때
 const TOAST_UNDO_MS = 5000; // [취소]가 있을 때는 누를 시간을 넉넉히
@@ -67,6 +86,26 @@ const els = {
   calDetailDesc: $('cal-detail-desc'),
   calDetailList: $('cal-detail-list'),
   calDueList: $('cal-due-list'),
+  header: document.querySelector('.app-header'),
+  emptyTitle: $('empty-title'),
+  emptyDesc: $('empty-desc'),
+  dataTools: $('data-tools'),
+  localNotice: $('local-notice'),
+  exportButton: $('export-button'),
+  importButton: $('import-button'),
+  importFile: $('import-file'),
+  installButton: $('install-button'),
+  dialogClose: $('dialog-close'),
+  iconPanel: $('icon-panel'),
+  cycleChips: $('cycle-chips'),
+  lastField: $('last-field'),
+  lastChips: $('last-chips'),
+  historyField: $('history-field'),
+  historySummary: $('history-summary'),
+  historyDate: $('history-date'),
+  historyAdd: $('history-add-button'),
+  historyList: $('history-list'),
+  historyMore: $('history-more'),
 };
 
 const CAL_MAX_ICONS = 3;
@@ -143,9 +182,17 @@ function render(highlightId) {
   const entries = sortEntries(items.map((item) => ({ item, status: getStatus(item, today) })));
 
   els.list.replaceChildren(...entries.map((entry) => createCard(entry, entry.item.id === highlightId)));
-  els.empty.hidden = items.length > 0;
-  if (!items.length) renderSuggestions();
+  renderSuggestions();
+  renderDataTools();
   if (currentView === 'calendar') renderCalendar();
+}
+
+// 기기에만 저장 중이면 안내하고, 백업 버튼을 보여 줍니다.
+function renderDataTools() {
+  const loggedIn = typeof cloud !== 'undefined' && !!cloud.user;
+  els.localNotice.hidden = loggedIn || !items.length;
+  els.exportButton.hidden = !items.length;
+  els.dataTools.hidden = false;
 }
 
 /* ===== 보기 전환 ===== */
@@ -267,7 +314,6 @@ function renderCalendar() {
     const dayRecords = records.get(date) || [];
     const dayDues = dues.get(date) || [];
     const overdue = dayDues.length > 0 && date < today;
-    const weekday = (firstWeekday + day - 1) % 7;
 
     const cell = document.createElement('button');
     cell.type = 'button';
@@ -281,8 +327,6 @@ function renderCalendar() {
 
     const num = document.createElement('span');
     num.className = 'cal-num';
-    if (weekday === 0) num.classList.add('sun');
-    if (weekday === 6) num.classList.add('sat');
     num.textContent = day;
 
     // 한 날은 아이콘 그대로, 예정일은 점선 테두리, 지난 예정은 빨간 테두리로 표시
@@ -399,19 +443,43 @@ function createCard({ item, status }, highlight) {
   node.querySelector('.item-name').textContent = item.name;
   node.querySelector('.item-meta').textContent = describe(item, status);
   node.querySelector('.item-badge').textContent = LEVEL_LABEL[status.level];
-  node.querySelector('.item-main').setAttribute('aria-label', `${item.name} 수정`);
+  node.querySelector('.item-main').setAttribute('aria-label', `${item.name} 열기`);
   node.querySelector('.done-button').setAttribute('aria-label', `${item.name} 했어요`);
+  node.querySelector('.item-progress').replaceWith(createProgress(status));
   return node;
 }
 
+// 카드 아래 막대: 주기 대비 얼마나 지났는지 (색약이어도 길이로 읽을 수 있게)
+function createProgress(status) {
+  const bar = document.createElement('span');
+  bar.className = 'item-progress';
+  bar.setAttribute('aria-hidden', 'true');
+  const fill = document.createElement('span');
+  bar.append(fill);
+  if (status.ratio === null) bar.hidden = true;
+  else fill.style.width = `${Math.min(status.ratio, 1) * 100}%`;
+  return bar;
+}
+
+// 항목이 적을 때는 아직 추가하지 않은 추천 항목을 계속 보여 줍니다.
 function renderSuggestions() {
+  const names = new Set(items.map((item) => item.name));
+  const rest = SUGGESTIONS.filter((s) => !names.has(s.name));
+  els.empty.hidden = items.length >= SUGGEST_UNTIL || !rest.length;
+  if (els.empty.hidden) return;
+
+  els.empty.classList.toggle('is-more', items.length > 0);
+  els.emptyTitle.textContent = items.length ? '이런 것도 추가해 보세요' : '아직 항목이 없어요';
+  els.emptyDesc.textContent = items.length
+    ? '자주 잊는 일을 더 골라 보세요.'
+    : '자주 잊는 일을 골라 바로 추가해 보세요.';
   els.suggestions.replaceChildren(
-    ...SUGGESTIONS.map((s) => {
+    ...rest.map((s) => {
       const li = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = `${s.icon} ${s.name}`;
-      button.addEventListener('click', () => addSuggestion(s));
+      button.addEventListener('click', () => openDialog(null, s));
       li.append(button);
       return li;
     })
@@ -425,7 +493,7 @@ function renderEmojiPicker() {
       button.type = 'button';
       button.textContent = emoji;
       button.setAttribute('aria-label', `아이콘 ${emoji}`);
-      button.addEventListener('click', () => setDialogIcon(emoji));
+      button.addEventListener('click', () => pickDialogIcon(emoji));
       return button;
     })
   );
@@ -433,11 +501,126 @@ function renderEmojiPicker() {
 
 // 항목 창에서 고른 아이콘 (이모지 또는 이미지 data URL). 글자로 직접 입력할 수는 없습니다.
 let dialogIcon = DEFAULT_ICON;
+let iconTouched = false; // 직접 고른 뒤에는 이름으로 자동 추천하지 않습니다.
+let dialogHistory = []; // 수정 창에서 고치는 중인 기록 (저장할 때 반영)
+let historyExpanded = false;
 
 function setDialogIcon(icon) {
   dialogIcon = isValidIcon(icon) ? icon : DEFAULT_ICON;
   renderIcon(els.iconPreview, dialogIcon);
   syncEmojiPicker();
+}
+
+function pickDialogIcon(icon) {
+  iconTouched = true;
+  setDialogIcon(icon);
+  toggleIconPanel(false);
+}
+
+function toggleIconPanel(open = els.iconPanel.hidden) {
+  els.iconPanel.hidden = !open;
+  els.iconPreview.setAttribute('aria-expanded', String(open));
+}
+
+function suggestIcon(name) {
+  const found = ICON_KEYWORDS.find(([word]) => name.includes(word));
+  return found ? found[1] : DEFAULT_ICON;
+}
+
+/* ===== 빠른 선택 칩 ===== */
+
+function makeChip(label, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function renderQuickChips() {
+  els.cycleChips.replaceChildren(
+    ...CYCLE_CHIPS.map(([days, label]) =>
+      makeChip(label, () => {
+        els.cycle.value = days;
+        syncQuickChips();
+      })
+    )
+  );
+  els.lastChips.replaceChildren(
+    ...LAST_CHIPS.map(([daysAgo, label]) =>
+      makeChip(label, () => {
+        els.last.value = daysAgo === null ? '' : addDays(todayStr(), -daysAgo);
+        syncQuickChips();
+      })
+    )
+  );
+}
+
+function syncQuickChips() {
+  [...els.cycleChips.children].forEach((chip, i) => {
+    chip.setAttribute('aria-pressed', String(Number(els.cycle.value) === CYCLE_CHIPS[i][0]));
+  });
+  const today = todayStr();
+  [...els.lastChips.children].forEach((chip, i) => {
+    const daysAgo = LAST_CHIPS[i][0];
+    const value = daysAgo === null ? '' : addDays(today, -daysAgo);
+    chip.setAttribute('aria-pressed', String(els.last.value === value));
+  });
+}
+
+/* ===== 기록 목록 (수정 창) ===== */
+
+function averageCycle(history) {
+  if (history.length < 2) return null;
+  return Math.round(daysBetween(history[history.length - 1], history[0]) / (history.length - 1));
+}
+
+function renderHistory() {
+  const today = todayStr();
+  const count = dialogHistory.length;
+  const avg = averageCycle(dialogHistory);
+  els.historySummary.textContent = count
+    ? `${count}번 기록 · 마지막 ${formatElapsed(daysBetween(dialogHistory[0], today))}` +
+      (avg ? ` · 평균 ${avg}일마다 했어요` : '')
+    : '아직 기록이 없어요. 한 날을 추가해 보세요.';
+
+  const shown = historyExpanded ? dialogHistory : dialogHistory.slice(0, HISTORY_PREVIEW);
+  els.historyList.replaceChildren(
+    ...shown.map((date) => {
+      const li = document.createElement('li');
+      const text = document.createElement('span');
+      text.textContent = `${formatKoreanDate(date)} · ${formatElapsed(daysBetween(date, today))}`;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'history-remove';
+      remove.textContent = '✕';
+      remove.setAttribute('aria-label', `${formatKoreanDate(date)} 기록 지우기`);
+      remove.addEventListener('click', () => {
+        dialogHistory = dialogHistory.filter((d) => d !== date);
+        renderHistory();
+      });
+      li.append(text, remove);
+      return li;
+    })
+  );
+
+  const hiddenCount = count - shown.length;
+  els.historyMore.hidden = hiddenCount <= 0;
+  els.historyMore.textContent = `${hiddenCount}개 더 보기`;
+}
+
+function addHistoryDate() {
+  const date = els.historyDate.value;
+  if (!isDateStr(date) || date > todayStr()) {
+    return showFormError('오늘이나 지난 날짜를 골라 주세요.', els.historyDate);
+  }
+  if (dialogHistory.includes(date)) {
+    return showFormError('이미 기록한 날짜예요.', els.historyDate);
+  }
+  els.formError.hidden = true;
+  dialogHistory = normalizeHistory([date, ...dialogHistory]);
+  els.historyDate.value = '';
+  renderHistory();
 }
 
 function syncEmojiPicker() {
@@ -492,8 +675,9 @@ function renderUser(user) {
   const meta = user.user_metadata || {};
   els.userName.textContent = meta.full_name || meta.name || user.email || 'Google 계정';
   els.userInfo.title = els.userName.textContent; // 모바일에서는 이름을 숨기고 사진만 보여 줌
-  els.userAvatar.hidden = !meta.avatar_url;
-  if (meta.avatar_url) els.userAvatar.src = meta.avatar_url;
+  const avatar = isSafeAvatar(meta.avatar_url) ? meta.avatar_url : '';
+  els.userAvatar.hidden = !avatar;
+  if (avatar) els.userAvatar.src = avatar;
 }
 
 async function handleLogin() {
@@ -505,6 +689,7 @@ async function handleLogin() {
 async function handleLogout() {
   els.logoutButton.disabled = true;
   await cloudSignOut();
+  forgetGroup();
   els.logoutButton.disabled = false;
   showToast('로그아웃했어요. 기록은 클라우드에 남아 있어요');
 }
@@ -539,18 +724,58 @@ function markDone(id) {
   });
 }
 
-function addSuggestion(suggestion) {
-  items.push({
-    id: createId(),
-    name: suggestion.name,
-    icon: suggestion.icon,
-    cycleDays: suggestion.cycleDays,
-    history: [],
-    createdAt: todayStr(),
-  });
+/* ===== 백업 ===== */
+
+function exportBackup() {
+  const data = { app: 'when-did-i', version: 1, exportedAt: new Date().toISOString(), items };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `그거언제했더라_백업_${todayStr()}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`항목 ${items.length}개를 파일로 내보냈어요`);
+}
+
+// 같은 항목(id)은 기록 날짜를 합치고, 없는 항목은 새로 추가합니다.
+async function importBackup(file) {
+  if (!file) return;
+  if (file.size > IMPORT_MAX_BYTES) return showToast('5MB 이하 백업 파일만 가져올 수 있어요');
+
+  let incoming;
+  try {
+    const data = JSON.parse(await file.text());
+    const list = Array.isArray(data) ? data : data && data.items;
+    if (!Array.isArray(list)) throw new Error();
+    incoming = list.map(sanitizeItem).filter(Boolean);
+  } catch {
+    return showToast('백업 파일을 읽을 수 없어요');
+  }
+  if (!incoming.length) return showToast('가져올 항목이 없어요');
+
+  const previous = items.map((item) => ({ ...item, history: [...item.history] }));
+  let added = 0;
+  let merged = 0;
+  for (const item of incoming) {
+    const existing = findItem(item.id);
+    if (existing) {
+      existing.history = normalizeHistory([...existing.history, ...item.history]);
+      merged++;
+    } else {
+      items.push(item);
+      added++;
+    }
+  }
   persist();
   render();
-  showToast(`${suggestion.name} 추가했어요`);
+  showToast(`새 항목 ${added}개, 합친 항목 ${merged}개를 가져왔어요`, () => {
+    items = previous;
+    persist();
+    render();
+  });
 }
 
 // confirm()은 인앱 브라우저 등에서 막혀 항상 false가 될 수 있어,
@@ -592,24 +817,39 @@ function deleteItem(id) {
 
 /* ===== 다이얼로그 ===== */
 
-function openDialog(id = null) {
+// id가 있으면 수정, preset(추천 항목)이 있으면 그 값으로 채운 추가 창을 엽니다.
+function openDialog(id = null, preset = null) {
   // 이미 열려 있을 때 showModal()을 다시 부르면 오류가 납니다.
   if (els.dialog.open) return;
   const item = id ? findItem(id) : null;
+  const source = item || preset;
   editingId = item ? item.id : null;
 
-  els.dialogTitle.textContent = item ? '항목 수정' : '항목 추가';
-  setDialogIcon(item ? item.icon : DEFAULT_ICON);
-  els.name.value = item ? item.name : '';
-  els.cycle.value = item && item.cycleDays ? item.cycleDays : '';
-  els.last.value = item && item.history[0] ? item.history[0] : '';
+  els.dialogTitle.textContent = item ? item.name : '항목 추가';
+  iconTouched = !!source;
+  setDialogIcon(source ? source.icon : DEFAULT_ICON);
+  toggleIconPanel(false);
+  els.name.value = source ? source.name : '';
+  els.cycle.value = source && source.cycleDays ? source.cycleDays : '';
+  els.last.value = '';
   els.last.max = todayStr();
+  els.historyDate.max = todayStr();
+  els.historyDate.value = '';
+
+  // 수정할 때는 '마지막으로 한 날' 대신 지난 기록 전체를 보여 줍니다. (기록을 덮어쓰지 않도록)
+  els.lastField.hidden = !!item;
+  els.historyField.hidden = !item;
+  dialogHistory = item ? [...item.history] : [];
+  historyExpanded = false;
+  if (item) renderHistory();
+
   els.deleteButton.hidden = !item;
   els.formError.hidden = true;
   syncEmojiPicker();
+  syncQuickChips();
 
   els.dialog.showModal();
-  if (!item) els.name.focus();
+  if (!source) els.name.focus();
 }
 
 function showFormError(message, field) {
@@ -651,11 +891,7 @@ function handleSubmit(event) {
     item.name = name;
     item.icon = icon;
     item.cycleDays = cycleDays;
-    // 마지막 수행일을 바꾸면 기존 마지막 기록을 대체합니다.
-    if (last !== (item.history[0] || '')) {
-      const rest = item.history.slice(1);
-      item.history = normalizeHistory(last ? [last, ...rest] : rest);
-    }
+    item.history = normalizeHistory(dialogHistory);
   } else {
     items.push({
       id: createId(),
@@ -715,7 +951,27 @@ els.form.addEventListener('submit', handleSubmit);
 els.cancelButton.addEventListener('click', () => els.dialog.close());
 els.deleteButton.addEventListener('click', handleDeleteClick);
 els.iconUpload.addEventListener('click', () => els.iconFile.click());
-els.iconFile.addEventListener('change', () => handleIconFile(els.iconFile, setDialogIcon));
+els.iconFile.addEventListener('change', () => handleIconFile(els.iconFile, pickDialogIcon));
+els.iconPreview.addEventListener('click', () => toggleIconPanel());
+els.dialogClose.addEventListener('click', () => els.dialog.close());
+els.name.addEventListener('input', () => {
+  if (!iconTouched && !editingId) setDialogIcon(suggestIcon(els.name.value));
+});
+els.cycle.addEventListener('input', syncQuickChips);
+els.last.addEventListener('input', syncQuickChips);
+els.historyAdd.addEventListener('click', addHistoryDate);
+els.historyMore.addEventListener('click', () => {
+  historyExpanded = true;
+  renderHistory();
+});
+
+els.exportButton.addEventListener('click', exportBackup);
+els.importButton.addEventListener('click', () => els.importFile.click());
+els.importFile.addEventListener('change', () => {
+  const file = els.importFile.files[0];
+  els.importFile.value = ''; // 같은 파일을 다시 골라도 동작하도록
+  importBackup(file);
+});
 
 // 바깥(배경)을 누르면 닫기
 // target만 보면 다이얼로그 안쪽 여백을 눌러도 닫히므로 좌표로 판단합니다.
@@ -758,14 +1014,60 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') render();
 });
 
+// 아래로 스크롤하면 [+] 버튼을 숨겨 카드·범례를 가리지 않게 하고, 헤더 아래에 경계선을 그립니다.
+let lastScrollY = window.scrollY;
+window.addEventListener(
+  'scroll',
+  () => {
+    const y = window.scrollY;
+    els.header.classList.toggle('is-scrolled', y > 4);
+    if (y > lastScrollY + 4 && y > 80) els.addButton.classList.add('is-away');
+    else if (y < lastScrollY - 4) els.addButton.classList.remove('is-away');
+    lastScrollY = y;
+  },
+  { passive: true }
+);
+
+/* ===== 홈 화면 추가 (PWA) ===== */
+
+let installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  els.installButton.hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  els.installButton.hidden = true;
+  showToast('홈 화면에 추가했어요');
+});
+
+els.installButton.addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  els.installButton.hidden = true;
+});
+
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((error) => console.warn('[pwa] 서비스 워커 등록 실패:', error));
+  });
+}
+
 /* ===== 시작 ===== */
 
 els.sort.value = sortMode;
 els.warning.hidden = isStorageAvailable();
 renderEmojiPicker();
+renderQuickChips();
 render();
 
-cloudInit({
+// group.js까지 모두 실행된 뒤에 시작합니다. (로그인 콜백이 groupOnUser를 부르므로)
+document.addEventListener('DOMContentLoaded', () => cloudInit({
   getItems: () => items,
   setItems: (next) => {
     items = next;
@@ -775,9 +1077,10 @@ cloudInit({
   onStatus: renderSyncStatus,
   onUser: (user) => {
     renderUser(user);
+    renderDataTools();
     groupOnUser(user);
   },
-});
+}));
 
 els.loginButton.addEventListener('click', handleLogin);
 els.logoutButton.addEventListener('click', handleLogout);
