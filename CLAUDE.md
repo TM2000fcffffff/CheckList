@@ -12,15 +12,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 반드시 HTTP 서버로 열어서 확인합니다. `file://`로 열면(미리보기 창에서는 `data:` URL로 바뀜) `localStorage`가 막혀 저장 기능을 확인할 수 없습니다.
 - 동작 확인은 브라우저에서 직접 클릭하거나 DOM을 조작하는 방식으로 하고, 휴대폰 화면(375px)에서도 확인합니다.
 - 배포: `main`에 푸시하면 Vercel(https://checklist-five-pi.vercel.app, 프로젝트 `checklist`)에 자동으로 배포됩니다. GitHub Pages(https://tm2000fcffffff.github.io/CheckList/)는 2026-10-21 기준 저장소 설정에서 꺼져 있습니다(다시 켤 수 있으니 리소스 경로는 계속 상대 경로로 씁니다).
-- 이 PC에는 Python·Node·`gh`가 없습니다. 로컬 서버는 `.claude/launch.json`의 `static`(PowerShell, 포트 5713)을 쓰고, GitHub 저장소 상태는 브라우저에서 `api.github.com/repos/TM2000fcffffff/CheckList`로 확인합니다.
+- 이 PC에는 Python·Node·`gh`가 없습니다(Git Bash의 `curl`은 있어 에셋을 내려받을 수 있음). 로컬 서버는 `.claude/launch.json`의 `static`(PowerShell, 포트 5713)을 쓰며, 폴더 주소(`/promo/`)는 404이므로 `index.html`까지 적습니다. GitHub 저장소 상태는 브라우저에서 `api.github.com/repos/TM2000fcffffff/CheckList`로 확인합니다.
 - 로컬과 배포 사이트는 같은 Supabase를 씁니다. 로그인 상태에서 테스트하면 사용자의 실제 기록이 바뀌므로, 테스트용 항목·그룹을 새로 만들어 확인하고 끝나면 지웁니다(기존 항목은 건드리지 않음).
 - 배포 확인: 푸시하고 10~20초 뒤 배포 사이트에서 새로 추가한 전역 함수가 있는지(`typeof 함수명`) 보고 새 버전이 반영됐는지 판단합니다.
+- 배포 반영을 기다릴 때는 `sleep N; …`(막힘) 대신 `for i in $(seq 1 30); do curl -s 주소 | grep -q 새코드 && break; sleep 3; done`처럼 확인될 때까지 반복합니다.
 
 ## 테스트 방법
 
 - 파일 업로드는 `DataTransfer`로 `input.files`를 채운 뒤 `change` 이벤트를 보내 확인합니다.
 - 다른 그룹원의 동작(가입·룰렛)은 `execute_sql`로 다른 사용자를 흉내 내 커밋하면 Realtime 반영까지 확인할 수 있습니다. 끝나면 테스트 그룹을 삭제합니다.
 - 같은 주소에 `#`만 붙여 이동하면 새로고침되지 않아 새 코드가 적용되지 않습니다. `location.reload()`를 씁니다.
+- 캔버스 영상 검수: `renderAt(t)`로 여러 시점을 그려 한 캔버스에 모은 뒤 `toDataURL`로 `<img>` 오버레이에 띄우고 스크린샷 한 번으로 확인합니다.
 
 ## 구조
 
@@ -53,4 +55,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 코드 주석과 커밋 메시지는 한국어로 씁니다.
 - Windows PowerShell 5.1에서 `git commit -m`에 큰따옴표가 들어가면 인자가 깨집니다. 메시지를 파일로 저장해 `git commit -F <파일>`로 커밋하거나 Bash를 사용합니다.
 - PowerShell 5.1로 실행하는 `.ps1`에 한글이 있으면 UTF-8 BOM이 있어야 깨지지 않습니다.
+- 미리보기 창이 가려지면 스크린샷이 시간 초과되고 `requestAnimationFrame`/`requestVideoFrameCallback`이 멈춥니다. `javascript_tool`은 45초에서 끊기므로, 오래 걸리는 작업(MP4 내보내기 등)은 `await` 없이 시작해 결과를 `window` 변수에 담고 다음 호출에서 확인합니다.
 - Claude in Chrome: 창이 최대화되어 있으면 `resize_window`가 듣지 않으니, 375px `iframe`으로 모바일 화면을 확인합니다. `searchadvisor.naver.com`은 안전 제한으로 열 수 없고, `validator.schema.org`는 reCAPTCHA가 뜨면 사용자가 직접 풀어야 합니다.
