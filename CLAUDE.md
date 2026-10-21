@@ -37,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 다음 예정일은 `getNextDue(item)` = `history[0] + cycleDays`로 계산합니다(저장하지 않음). 달력은 다음 예정일만 표시하고, 오늘보다 이전이면 그 날짜에 지난 예정(빨간색)으로 표시합니다.
 - 상태 단계: `경과일 ÷ cycleDays`가 0.7 미만이면 ok, 0.7 이상 1 미만이면 soon, 1 이상이면 over, 주기가 없으면 none. 카드에 `level-*` 클래스로 표시합니다.
 - 화면 요소는 `textContent`와 `<template>`으로 만듭니다. 사용자가 입력한 내용을 `innerHTML`에 넣지 않습니다.
+- 홍보영상(`promo/`): 앱과 별개인 도구 페이지입니다. `promo/index.html`(폴더 주소 `/promo/`는 로컬 서버에서 404라 파일명까지 씀)이 캔버스에 `renderAt(t)`로 장면을 그리고, WebCodecs + `vendor/mp4-muxer.js`로 1080p 60fps MP4를 프레임 단위로 내보냅니다(이 PC의 Chrome은 AAC 인코더가 없어 소리는 Opus). 3D 이모지(Microsoft Fluent Emoji, MIT)와 Pretendard 폰트(OFL)는 `assets/`·`fonts/`에 내려받아 둡니다. 장면 시각은 `T_CUT`·`T_ROOM` 등 상수 한 줄에 모여 있고 소리도 같은 상수를 씁니다. 길이는 20초 이내로 유지합니다. `noindex` + `robots.txt`의 `Disallow: /promo/`로 검색에서 제외합니다. 결과물 `그거언제했더라_홍보영상_1080p60.mp4`도 이 폴더에 둡니다.
 - 검색·AI 노출: `<head>` 메타·JSON-LD(canonical은 Vercel 주소), `robots.txt`, `sitemap.xml`, `llms.txt`, `og-image.png`(1200×630). 기능을 추가하면 JSON-LD `featureList`와 `llms.txt`도 고치고, 내용이 바뀌면 `sitemap.xml`의 `lastmod`를 갱신합니다.
 
 ## 주의할 점

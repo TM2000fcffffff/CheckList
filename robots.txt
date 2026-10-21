@@ -1,6 +1,7 @@
 # 검색 엔진과 AI 크롤러 모두 허용합니다.
 User-agent: *
 Allow: /
+Disallow: /promo/
 
 User-agent: GPTBot
 Allow: /
