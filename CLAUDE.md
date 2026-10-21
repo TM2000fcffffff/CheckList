@@ -11,7 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 빌드, 패키지 매니저, 테스트 도구 없음. HTML/CSS/Vanilla JS만 사용합니다. 외부 라이브러리는 CDN으로 불러오는 `@supabase/supabase-js`(UMD, 버전 고정) 하나뿐이며, 그 밖의 프레임워크·라이브러리는 추가하지 않습니다.
 - 반드시 HTTP 서버로 열어서 확인합니다. `file://`로 열면(미리보기 창에서는 `data:` URL로 바뀜) `localStorage`가 막혀 저장 기능을 확인할 수 없습니다.
 - 동작 확인은 브라우저에서 직접 클릭하거나 DOM을 조작하는 방식으로 하고, 휴대폰 화면(375px)에서도 확인합니다.
-- 배포: `main`에 푸시하면 Vercel(https://checklist-five-pi.vercel.app, 프로젝트 `checklist`)과 GitHub Pages(https://tm2000fcffffff.github.io/CheckList/)에 자동으로 배포됩니다. GitHub Pages는 하위 경로에 배포되므로 리소스 경로는 항상 상대 경로로 씁니다.
+- 배포: `main`에 푸시하면 Vercel(https://checklist-five-pi.vercel.app, 프로젝트 `checklist`)에 자동으로 배포됩니다. GitHub Pages(https://tm2000fcffffff.github.io/CheckList/)는 2026-10-21 기준 저장소 설정에서 꺼져 있습니다(다시 켤 수 있으니 리소스 경로는 계속 상대 경로로 씁니다).
+- 이 PC에는 Python·Node·`gh`가 없습니다. 로컬 서버는 `.claude/launch.json`의 `static`(PowerShell, 포트 5713)을 쓰고, GitHub 저장소 상태는 브라우저에서 `api.github.com/repos/TM2000fcffffff/CheckList`로 확인합니다.
 - 로컬과 배포 사이트는 같은 Supabase를 씁니다. 로그인 상태에서 테스트하면 사용자의 실제 기록이 바뀌므로, 테스트용 항목·그룹을 새로 만들어 확인하고 끝나면 지웁니다(기존 항목은 건드리지 않음).
 - 배포 확인: 푸시하고 10~20초 뒤 배포 사이트에서 새로 추가한 전역 함수가 있는지(`typeof 함수명`) 보고 새 버전이 반영됐는지 판단합니다.
 
@@ -36,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 다음 예정일은 `getNextDue(item)` = `history[0] + cycleDays`로 계산합니다(저장하지 않음). 달력은 다음 예정일만 표시하고, 오늘보다 이전이면 그 날짜에 지난 예정(빨간색)으로 표시합니다.
 - 상태 단계: `경과일 ÷ cycleDays`가 0.7 미만이면 ok, 0.7 이상 1 미만이면 soon, 1 이상이면 over, 주기가 없으면 none. 카드에 `level-*` 클래스로 표시합니다.
 - 화면 요소는 `textContent`와 `<template>`으로 만듭니다. 사용자가 입력한 내용을 `innerHTML`에 넣지 않습니다.
+- 검색·AI 노출: `<head>` 메타·JSON-LD(canonical은 Vercel 주소), `robots.txt`, `sitemap.xml`, `llms.txt`, `og-image.png`(1200×630). 기능을 추가하면 JSON-LD `featureList`와 `llms.txt`도 고치고, 내용이 바뀌면 `sitemap.xml`의 `lastmod`를 갱신합니다.
 
 ## 주의할 점
 
@@ -49,3 +51,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `googlef2bd8a129c3794f7.html`은 Google Search Console 소유권 확인 파일입니다(속성 `https://checklist-five-pi.vercel.app/`, sitemap 제출 완료). 지우면 소유권이 풀리므로 그대로 둡니다. FAQ 문구를 바꾸면 본문 `.faq`와 `<head>`의 FAQPage JSON-LD를 함께 고칩니다.
 - 코드 주석과 커밋 메시지는 한국어로 씁니다.
 - Windows PowerShell 5.1에서 `git commit -m`에 큰따옴표가 들어가면 인자가 깨집니다. 메시지를 파일로 저장해 `git commit -F <파일>`로 커밋하거나 Bash를 사용합니다.
+- PowerShell 5.1로 실행하는 `.ps1`에 한글이 있으면 UTF-8 BOM이 있어야 깨지지 않습니다.
+- Claude in Chrome: 창이 최대화되어 있으면 `resize_window`가 듣지 않으니, 375px `iframe`으로 모바일 화면을 확인합니다. `searchadvisor.naver.com`은 안전 제한으로 열 수 없고, `validator.schema.org`는 reCAPTCHA가 뜨면 사용자가 직접 풀어야 합니다.
