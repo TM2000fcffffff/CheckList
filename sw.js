@@ -3,7 +3,7 @@
 // - Supabase·CDN 등 다른 주소와 promo/(큰 영상)는 건드리지 않습니다.
 // 보관할 파일 목록을 바꾸면 CACHE 이름의 숫자를 올립니다.
 
-const CACHE = 'when-did-i-v1';
+const CACHE = 'when-did-i-v2';
 const SHELL = [
   './',
   'index.html',
@@ -14,6 +14,7 @@ const SHELL = [
   'sync.js',
   'script.js',
   'group.js',
+  'chat.js',
   'favicon.svg',
   'manifest.webmanifest',
   'icons/icon-192.png',

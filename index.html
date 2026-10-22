@@ -64,7 +64,8 @@
           "그룹을 만들어 집안일 룰렛으로 담당자 뽑기",
           "항목별 지난 기록 목록과 평균 주기 확인, 지난 날짜 추가",
           "JSON 파일로 기록 백업·복원",
-          "홈 화면에 추가해 앱처럼 쓰기(PWA), 오프라인에서도 열림"
+          "홈 화면에 추가해 앱처럼 쓰기(PWA), 오프라인에서도 열림",
+          "사용법을 물어보면 답해 주는 도움말 챗봇"
         ],
         "isPartOf": { "@id": "https://checklist-five-pi.vercel.app/#website" }
       },
@@ -358,6 +359,22 @@
   </main>
 
   <button id="add-button" class="fab" type="button" aria-label="항목 추가">+</button>
+  <button id="chat-button" class="chat-fab" type="button" aria-label="사용법 물어보기">💬</button>
+
+  <!-- 도움말 챗봇 -->
+  <dialog id="chat-dialog" class="dialog chat-dialog" aria-labelledby="chat-title">
+    <div class="dialog-head">
+      <h2 id="chat-title">💬 사용법 물어보기</h2>
+      <button type="button" id="chat-close" class="dialog-close" aria-label="닫기">✕</button>
+    </div>
+    <ul id="chat-log" class="chat-log" aria-live="polite"></ul>
+    <div id="chat-samples" class="quick-chips chat-samples" aria-label="예시 질문"></div>
+    <form id="chat-form" class="inline-form chat-form">
+      <input id="chat-input" type="text" maxlength="500" placeholder="궁금한 점을 물어보세요" autocomplete="off" aria-label="질문">
+      <button type="submit" id="chat-send" class="btn primary">보내기</button>
+    </form>
+    <p class="chat-note">사용법 문서를 바탕으로 AI가 답해요. 틀릴 수 있고, 개인정보는 적지 마세요.</p>
+  </dialog>
 
   <!-- 항목 추가/수정 -->
   <dialog id="item-dialog" class="dialog">
@@ -461,5 +478,6 @@
   <script src="sync.js"></script>
   <script src="script.js"></script>
   <script src="group.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>

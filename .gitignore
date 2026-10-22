@@ -4,3 +4,8 @@
 # OS
 Thumbs.db
 .DS_Store
+
+# 환경 변수 (API 키 등 비밀값)
+.env
+.env.*
+!.env.example
