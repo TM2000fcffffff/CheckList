@@ -553,98 +553,6 @@ button { cursor: pointer; }
   pointer-events: none;
 }
 
-/* ===== 도움말 챗봇 ===== */
-/* [+] 위에 작게 둡니다. 그룹 보기처럼 [+]가 없으면 그 자리로 내려옵니다. */
-.chat-fab {
-  position: fixed;
-  right: max(26px, calc((100vw - 560px) / 2 + 26px));
-  bottom: calc(100px + env(safe-area-inset-bottom));
-  width: 52px;
-  height: 52px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-  font-size: 1.5rem;
-  line-height: 1;
-  box-shadow: 0 4px 14px rgba(20, 24, 40, 0.16);
-  transition: transform 0.2s;
-}
-
-.chat-fab:active { transform: scale(0.94); }
-
-body:has(#add-button[hidden]) .chat-fab {
-  right: max(20px, calc((100vw - 560px) / 2 + 20px));
-  bottom: calc(30px + env(safe-area-inset-bottom));
-}
-
-.dialog.chat-dialog {
-  display: flex;
-  flex-direction: column;
-  height: min(640px, calc(100dvh - 32px));
-  overflow: hidden;
-}
-
-.dialog.chat-dialog:not([open]) { display: none; }
-
-.chat-dialog .dialog-head { margin-bottom: 8px; }
-
-.chat-log {
-  flex: 1;
-  min-height: 0;
-  margin: 0 -20px;
-  padding: 4px 20px 12px;
-  overflow-y: auto;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.chat-msg { display: flex; flex-direction: column; max-width: 88%; }
-.chat-msg.from-user { align-self: flex-end; align-items: flex-end; }
-.chat-msg.from-bot { align-self: flex-start; }
-
-.chat-bubble {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: 16px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.5;
-}
-
-.from-user .chat-bubble {
-  border-bottom-right-radius: 4px;
-  background: var(--primary);
-  color: var(--primary-text);
-}
-
-.from-bot .chat-bubble {
-  border-bottom-left-radius: 4px;
-  background: var(--surface-2);
-}
-
-.chat-msg.is-pending .chat-bubble { color: var(--text-sub); }
-
-.chat-sources {
-  margin: 4px 4px 0;
-  color: var(--text-sub);
-  font-size: 0.8125rem;
-}
-
-.chat-samples { margin-bottom: 10px; }
-.chat-samples[hidden] { display: none; }
-.chat-samples button { min-height: 40px; font-size: 0.875rem; }
-
-.chat-form .btn { min-height: 46px; }
-
-.chat-note {
-  margin: 8px 0 0;
-  color: var(--text-sub);
-  font-size: 0.8125rem;
-  text-align: center;
-}
-
 /* ===== 다이얼로그 ===== */
 .dialog {
   width: min(calc(100vw - 32px), 440px);
@@ -1192,6 +1100,8 @@ body:has(#add-button[hidden]) .chat-fab {
   to { opacity: 1; transform: none; }
 }
 
+/* 그룹 보기에서는 [+] 버튼이 없으므로 가로를 더 씁니다. */
+body:has(#add-button[hidden]) .toast { max-width: min(calc(100vw - 32px), 440px); }
 
 .toast[hidden] { display: none; }
 
